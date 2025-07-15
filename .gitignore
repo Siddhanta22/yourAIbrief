@@ -1,0 +1,25 @@
+# Node modules
+node_modules/
+
+# Build output
+.next/
+out/
+dist/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+
+# Env files
+.env
+.env.*
+
+# Prisma
+prisma/dev.db
+prisma/dev.db-journal
+
+# Misc
+*.local
+coverage/ 
