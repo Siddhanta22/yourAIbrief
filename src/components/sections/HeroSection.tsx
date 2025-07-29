@@ -142,18 +142,7 @@ export function HeroSection() {
             <SubscriptionForm onSubmit={handleSubscribe} isSubmitting={isSubmitting} />
           </motion.div>
 
-          {/* CTA button */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7, duration: 0.8 }}
-            className="flex justify-center"
-          >
-            <button className="btn-primary inline-flex items-center">
-              Start Reading Now
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </button>
-          </motion.div>
+
         </motion.div>
       </div>
     </section>
