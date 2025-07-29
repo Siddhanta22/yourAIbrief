@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ContentCurationService } from '@/lib/content-curation';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = request.nextUrl;
     const page = parseInt(searchParams.get('page') || '1', 10);
     const pageSize = parseInt(searchParams.get('pageSize') || '12', 10);
     const curationService = new ContentCurationService();

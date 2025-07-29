@@ -20,21 +20,21 @@ const TOPICS = [
 ];
 
 export default function OnboardingPage() {
-  const { data: session, status } = useSession();
+  const session = useSession();
   const router = useRouter();
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [frequency, setFrequency] = useState("daily");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (status === "unauthenticated") {
+    if (session?.status === "unauthenticated") {
       router.push("/login");
     }
     // If already onboarded, redirect to /member
-    if (session?.user && (session.user as any).hasOnboarded) {
+    if (session?.data?.user && (session.data.user as any).hasOnboarded) {
       router.push("/member");
     }
-  }, [status, session, router]);
+  }, [session?.status, session?.data, router]);
 
   const handleTopicToggle = (topic: string) => {
     setSelectedTopics((prev) =>
@@ -54,7 +54,7 @@ export default function OnboardingPage() {
     }, 1000);
   };
 
-  if (status === "loading") {
+  if (session?.status === "loading") {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
@@ -99,7 +99,7 @@ export default function OnboardingPage() {
           className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={selectedTopics.length === 0 || isSubmitting}
         >
-          {isSubmitting ? "Saving..." : "Finish & Go to Member Home"}
+          {isSubmitting ? "Setting up..." : "Complete Setup"}
         </button>
       </form>
     </div>

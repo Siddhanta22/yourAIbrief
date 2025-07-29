@@ -13,13 +13,10 @@ export function CTASection() {
           Join thousands of AI professionals who get their daily intelligence fix from our curated newsletter.
         </p>
         
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button className="btn-secondary bg-white text-primary-600 hover:bg-neutral-100">
-            Get Started Free
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </button>
+        <div className="flex justify-center">
           <button className="btn-ghost text-white border-white hover:bg-white/10">
             Learn More
+            <ArrowRight className="w-4 h-4 ml-2" />
           </button>
         </div>
         

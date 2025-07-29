@@ -6,24 +6,24 @@ import { NewsletterPreview } from "@/components/sections/NewsletterPreview";
 import { useEffect } from "react";
 
 export default function MemberPage() {
-  const { data: session, status } = useSession();
+  const session = useSession();
   const router = useRouter();
 
   useEffect(() => {
-    if (status === "unauthenticated") {
+    if (session?.status === "unauthenticated") {
       router.push("/auth/signin?callbackUrl=/member");
     }
-  }, [status, router]);
+  }, [session?.status, router]);
 
-  if (status === "loading") {
+  if (session?.status === "loading") {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-2">Welcome, {session?.user?.name || "Member"}!</h1>
-        <p className="text-neutral-600 dark:text-neutral-400 mb-8">Here’s your personalized AI news feed and account management.</p>
+        <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-2">Welcome, {session?.data?.user?.name || "Member"}!</h1>
+        <p className="text-neutral-600 dark:text-neutral-400 mb-8">Here's your personalized AI news feed and account management.</p>
 
         {/* Live News Section */}
         <section className="mb-12">
