@@ -15,7 +15,7 @@ export function CTASection() {
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button className="btn-secondary bg-white text-primary-600 hover:bg-neutral-100">
-            Start Your Free Trial
+            Get Started Free
             <ArrowRight className="w-4 h-4 ml-2" />
           </button>
           <button className="btn-ghost text-white border-white hover:bg-white/10">
@@ -24,7 +24,7 @@ export function CTASection() {
         </div>
         
         <p className="text-sm text-primary-200 mt-6">
-          No credit card required • Cancel anytime • 7-day free trial
+          Free forever • No credit card required • Cancel anytime
         </p>
       </div>
     </section>

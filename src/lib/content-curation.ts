@@ -217,7 +217,7 @@ export class ContentCurationService {
         order: topicSections.length,
       });
     }
-
+    
     // Generate summary
     const summary = this.generateSummary(topicSections);
     return {

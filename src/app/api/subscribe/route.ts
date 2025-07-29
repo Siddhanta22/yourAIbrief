@@ -40,9 +40,9 @@ export async function POST(request: NextRequest) {
       });
       // Send welcome email only for new users
       let emailSent = false;
-      try {
-        const EmailService = (await import('@/lib/email-service')).EmailService;
-        const emailService = new EmailService();
+    try {
+      const EmailService = (await import('@/lib/email-service')).EmailService;
+      const emailService = new EmailService();
         // Patch user object to match app User type
         const { id, email: userEmail, name, preferences, role, isActive, createdAt, updatedAt } = user;
         let safePreferences: Record<string, any> | undefined = undefined;
@@ -60,18 +60,18 @@ export async function POST(request: NextRequest) {
           updatedAt,
         };
         emailSent = await emailService.sendWelcomeEmail(patchedUser);
-      } catch (e) {
-        console.error('Failed to send welcome email:', e);
-      }
-      return NextResponse.json({
-        success: true,
+    } catch (e) {
+      console.error('Failed to send welcome email:', e);
+    }
+    return NextResponse.json({
+      success: true,
         message: emailSent
           ? 'Successfully subscribed to AI Newsletter. Welcome email sent!'
           : 'Successfully subscribed, but failed to send welcome email.',
-        user: {
-          id: user.id,
-          email: user.email,
-          interests: user.userInterests.map((ui: any) => ui.category),
+      user: {
+        id: user.id,
+        email: user.email,
+        interests: user.userInterests.map((ui: any) => ui.category),
           preferredSendTime: user.preferredSendTime,
         },
         alreadySubscribed: false,
