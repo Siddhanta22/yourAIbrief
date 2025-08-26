@@ -21,14 +21,30 @@ export function Footer() {
               Personalized for researchers, developers, and AI enthusiasts.
             </p>
             <div className="flex space-x-4">
-              <a href="#" className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors">
-                <Twitter className="w-5 h-5" />
+              <a 
+                href="mailto:hello@youraibrief.com" 
+                className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+                title="Email us"
+              >
+                <Mail className="w-5 h-5" />
               </a>
-              <a href="#" className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors">
+              <a 
+                href="https://github.com/Siddhanta22/yourAIbrief" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+                title="GitHub Repository"
+              >
                 <Github className="w-5 h-5" />
               </a>
-              <a href="#" className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors">
-                <Linkedin className="w-5 h-5" />
+              <a 
+                href="https://twitter.com/youraibrief" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+                title="Follow us on Twitter"
+              >
+                <Twitter className="w-5 h-5" />
               </a>
             </div>
           </div>
