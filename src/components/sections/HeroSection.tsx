@@ -31,6 +31,8 @@ export function HeroSection() {
     setIsSubmitting(true);
     setFormMessage(null);
     try {
+      console.log('Submitting subscription:', { name, email, interests, deliveryPreferences });
+      
       const res = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -42,7 +44,20 @@ export function HeroSection() {
           frequency: deliveryPreferences?.frequency,
         }),
       });
+      
+      console.log('Response status:', res.status);
+      console.log('Response headers:', Object.fromEntries(res.headers.entries()));
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('API Error Response:', errorText);
+        setFormMessage(`API Error (${res.status}): ${errorText}`);
+        return;
+      }
+      
       const data = await res.json();
+      console.log('API Response data:', data);
+      
       if (data.success) {
         router.push('/subscribed');
       } else if (data.alreadySubscribed) {
@@ -51,7 +66,8 @@ export function HeroSection() {
         setFormMessage(data.message || 'Subscription failed. Please try again.');
       }
     } catch (err) {
-      setFormMessage('An error occurred. Please try again.');
+      console.error('Subscription error:', err);
+      setFormMessage(`Network error: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setIsSubmitting(false);
     }

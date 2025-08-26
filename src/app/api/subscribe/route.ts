@@ -14,6 +14,9 @@ const subscribeSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    // Test database connection
+    await prisma.$connect();
+    
     const body = await request.json();
     const { name, email, interests, preferredSendTime, frequency } = subscribeSchema.parse(body);
 
@@ -27,7 +30,7 @@ export async function POST(request: NextRequest) {
       // If user exists and is verified, return success
       if (user.emailVerified) {
         const userPreferences = user.preferences as any;
-        return NextResponse.json({
+        const response = NextResponse.json({
           success: true,
           message: 'You are already subscribed to our newsletter!',
           user: {
@@ -39,13 +42,27 @@ export async function POST(request: NextRequest) {
             preferredSendTime: user.preferredSendTime,
           },
         });
+        
+        // Add CORS headers
+        response.headers.set('Access-Control-Allow-Origin', '*');
+        response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        
+        return response;
       } else {
         // User exists but not verified - send new confirmation email
         await sendConfirmationEmail(email, interests, preferredSendTime, frequency);
-        return NextResponse.json({
+        const response = NextResponse.json({
           success: true,
           message: 'Confirmation email sent! Please check your inbox to complete your subscription.',
         });
+        
+        // Add CORS headers
+        response.headers.set('Access-Control-Allow-Origin', '*');
+        response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        
+        return response;
       }
     }
 
@@ -70,23 +87,42 @@ export async function POST(request: NextRequest) {
     // Send confirmation email
     await sendConfirmationEmail(email, interests, preferredSendTime, frequency);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: 'Confirmation email sent! Please check your inbox to complete your subscription.',
     });
+    
+    // Add CORS headers
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
+    return response;
 
   } catch (error) {
     console.error('Subscription error:', error);
+    let errorResponse;
+    
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
+      errorResponse = NextResponse.json(
         { success: false, message: 'Invalid input data', errors: error.errors },
         { status: 400 }
       );
+    } else {
+      errorResponse = NextResponse.json(
+        { success: false, message: 'Internal server error', error: error instanceof Error ? error.message : 'Unknown error' },
+        { status: 500 }
+      );
     }
-    return NextResponse.json(
-      { success: false, message: 'Internal server error' },
-      { status: 500 }
-    );
+    
+    // Add CORS headers to error response
+    errorResponse.headers.set('Access-Control-Allow-Origin', '*');
+    errorResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    errorResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
+    return errorResponse;
+  } finally {
+    await prisma.$disconnect();
   }
 }
 
@@ -123,6 +159,17 @@ async function sendConfirmationEmail(
     console.error('Failed to send confirmation email:', error);
     throw error;
   }
+}
+
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }
 
 // Add DELETE handler for unsubscribe
