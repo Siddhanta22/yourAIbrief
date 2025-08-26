@@ -33,7 +33,7 @@ export function HeroSection() {
     try {
       console.log('Submitting subscription:', { name, email, interests, deliveryPreferences });
       
-      const res = await fetch('/api/test-subscribe', {
+      const res = await fetch('/api/simple', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
