@@ -2,8 +2,10 @@
 const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['@prisma/client'],
-    buildTraces: false,
   },
+  // Optimize build process to prevent stack overflow
+  swcMinify: true,
+  compress: true,
   images: {
     domains: [
       'images.unsplash.com',
