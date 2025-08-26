@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { 
@@ -14,22 +14,83 @@ import {
   Sun
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { useSession, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
+import { SignupPrompt } from './SignupPrompt';
+import { PreferencesModal } from './PreferencesModal';
 
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const { theme, setTheme } = useTheme();
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  const [showSignup, setShowSignup] = useState(false);
+  const [localEmail, setLocalEmail] = useState<string | null>(null);
+  const [openAccount, setOpenAccount] = useState(false);
+  const [showPrefs, setShowPrefs] = useState(false);
+  const [prefData, setPrefData] = useState<{ frequency?: string; preferredSendTime?: string; topics?: string[] }>({});
+  const accountMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    try {
+      setLocalEmail(localStorage.getItem('subscribedEmail'));
+    } catch {}
+  }, []);
+
+  // Click outside handler for account menu
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (accountMenuRef.current && !accountMenuRef.current.contains(event.target as Node)) {
+        setOpenAccount(false);
+      }
+    }
+
+    if (openAccount) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [openAccount]);
+
+  const handleLogout = () => {
+    setOpenAccount(false);
+    
+    // Clear localStorage for email-first auth
+    try {
+      localStorage.removeItem('subscribedEmail');
+    } catch (error) {
+      console.error('Error clearing localStorage:', error);
+    }
+    
+    // Clear local state
+    setLocalEmail(null);
+    
+    // Handle NextAuth logout if authenticated
+    if (status === 'authenticated') {
+      signOut({ callbackUrl: '/' });
+    } else {
+      // For email-first auth, just redirect to home
+      router.push('/');
+      // Force a page refresh to clear any cached state
+      window.location.reload();
+    }
+  };
 
   const navigation = [
     { name: 'Home', href: '/' },
-    { name: 'Dashboard', href: '/dashboard' },
     { name: 'About', href: '/about' },
   ];
 
   return (
-    <nav className="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-700">
+    <nav className="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-700 relative z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
+        <div className="grid grid-cols-3 items-center h-16">
+          {/* Logo - Left */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -43,8 +104,8 @@ export function Navigation() {
             </Link>
           </motion.div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          {/* Desktop Navigation - Center */}
+          <div className="hidden md:flex items-center justify-center space-x-8">
             {navigation.map((item) => (
               <Link
                 key={item.name}
@@ -56,14 +117,14 @@ export function Navigation() {
             ))}
           </div>
 
-          {/* Right side */}
-          <div className="flex items-center space-x-4">
+          {/* Right side - Theme + Profile */}
+          <div className="flex items-center justify-end space-x-4">
             {/* Theme Toggle */}
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors duration-200"
             >
-              {theme === 'dark' ? (
+              {mounted && theme === 'dark' ? (
                 <Sun className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
               ) : (
                 <Moon className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
@@ -72,9 +133,45 @@ export function Navigation() {
 
             {/* User Menu */}
             <div className="hidden md:flex items-center space-x-2">
-              <button className="btn-ghost">
-                <User className="w-5 h-5" />
-              </button>
+              {(status === 'authenticated' || !!localEmail) ? (
+                <div className="relative" ref={accountMenuRef}>
+                  <button
+                    onClick={() => setOpenAccount(v => !v)}
+                    className="btn-ghost relative"
+                  >
+                    <User className="w-5 h-5" />
+                  </button>
+                  {openAccount && (
+                    <div className="absolute right-0 mt-2 w-60 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-lg p-2 z-50">
+                      <div className="px-2 py-2 text-xs text-neutral-500 truncate">{session?.user?.email || localEmail}</div>
+                      <button
+                        onClick={async () => {
+                          const email = session?.user?.email || localEmail!;
+                          try {
+                            const res = await fetch(`/api/user/preferences?email=${encodeURIComponent(email)}`);
+                            const data = await res.json();
+                            setPrefData({ frequency: data?.preferences?.frequency, preferredSendTime: data?.preferredSendTime, topics: data?.topics || [] });
+                          } catch {}
+                          setOpenAccount(false);
+                          setShowPrefs(true);
+                        }}
+                        className="w-full text-left px-3 py-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                      >Update Preferences</button>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      >Logout</button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowSignup(true)}
+                  className="btn-ghost"
+                >
+                  <User className="w-5 h-5" />
+                </button>
+              )}
             </div>
 
             {/* Mobile menu button */}
@@ -111,14 +208,49 @@ export function Navigation() {
                 </Link>
               ))}
               <div className="pt-4 border-t border-neutral-200 dark:border-neutral-700">
-                <button className="flex items-center w-full px-3 py-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors duration-200">
-                  <User className="w-5 h-5 mr-2" />
-                  Account
-                </button>
+                {(status === 'authenticated' || !!localEmail) ? (
+                  <>
+                    <button
+                      onClick={() => { setIsOpen(false); handleLogout(); }}
+                      className="mt-2 flex items-center w-full px-3 py-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors duration-200"
+                    >
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => { setIsOpen(false); setShowSignup(true); }}
+                    className="flex items-center w-full px-3 py-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors duration-200"
+                  >
+                    <User className="w-5 h-5 mr-2" />
+                    Sign up / Login
+                  </button>
+                )}
               </div>
             </div>
           </motion.div>
         )}
+        {/* Modals */}
+        <SignupPrompt
+          isOpen={showSignup}
+          onClose={() => setShowSignup(false)}
+          onStart={() => { setShowSignup(false); router.push('/#subscribe'); toast.dismiss(); toast.success('Start with your email below.'); }}
+        />
+        <PreferencesModal
+          isOpen={showPrefs}
+          onClose={() => setShowPrefs(false)}
+          initialFrequency={(prefData.frequency as any) || 'daily'}
+          initialTime={prefData.preferredSendTime || '08:00 AM'}
+          initialTopics={prefData.topics || []}
+          onSave={async ({ frequency, preferredSendTime, topics }) => {
+            const email = session?.user?.email || localEmail!;
+            await fetch('/api/user/preferences', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, frequency, preferredSendTime, topics }),
+            });
+          }}
+        />
       </div>
     </nav>
   );

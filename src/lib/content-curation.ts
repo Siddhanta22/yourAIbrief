@@ -46,7 +46,38 @@ const SOURCE_BLOCKLIST: string[] = [
   'Bleeding Cool',
   'Biztoc',
   'PBS',
+  'PAUL TAN\'S AUTOMOTIVE NEWS',
+  'CarScoops',
+  'Motor1',
+  'AutoBlog',
+  'Car and Driver',
+  'Motor Trend',
+  'Automotive News',
+  // Finance/press-release wires and low-signal feeds
+  'GlobeNewswire',
+  'PR Newswire',
+  'Business Wire',
+  'ETF Daily News',
+  'American Banking News',
+  'PYMNTS',
+  'Poynter',
   // Example: 'Some Spam Source', 'Clickbait News',
+];
+
+// Hard keyword blocklist – drop if these look finance/ticker-centric or PR-only
+const KEYWORD_BLOCKLIST: RegExp[] = [
+  /\betf[s]?\b/i,
+  /\bdividend[s]?\b/i,
+  /\bdistribution[s]?\b/i,
+  /\bearnings\b/i,
+  /\beps\b/i,
+  /\bprice target\b/i,
+  /\boptions volume\b/i,
+  /\bNYSE\b/i,
+  /\bNASDAQ\b/i,
+  /\bDow Jones\b/i,
+  /\bpress release\b/i,
+  /\bquarterly results\b/i,
 ];
 
 // Helper for case-insensitive, partial source matching
@@ -68,23 +99,25 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
     console.error('NEWS_API_KEY is missing!');
     return { articles: [], totalResults: 0 };
   }
-  const params = {
-    apiKey: NEWS_API_KEY,
-    language: 'en',
-    pageSize,
-    page,
-    sortBy: 'publishedAt',
-    q: topics.length ? topics.join(' OR ') : 'artificial intelligence OR ai OR technology OR startups OR crypto OR fintech OR edtech',
-  };
-  console.log('[NewsAPI] Request params:', params);
+  const RAW_PAGE_SIZE = 50; // overfetch to keep post-filter pages filled
+  const MAX_RAW_PAGES = 10; // safety cap
+
+  function buildParams(rawPage: number) {
+    return {
+      apiKey: NEWS_API_KEY,
+      language: 'en',
+      pageSize: RAW_PAGE_SIZE,
+      page: rawPage,
+      sortBy: 'publishedAt',
+      q: topics.length
+        ? topics.join(' OR ')
+        : '"artificial intelligence" OR AI OR "machine learning" OR "deep learning" OR "neural network" OR "generative ai" OR LLM',
+    };
+  }
+
+  console.log('[NewsAPI] Using server-side filtered pagination. desired page:', page, 'size:', pageSize);
+
   try {
-    const res = await axios.get(NEWS_API_URL, { params });
-    console.log('[NewsAPI] Response status:', res.status);
-    console.log('[NewsAPI] Response data:', JSON.stringify(res.data, null, 2));
-    if (!res.data.articles) {
-      console.warn('[NewsAPI] No articles field in response:', res.data);
-      return { articles: [], totalResults: 0 };
-    }
     function categorizeArticle(article: any): string {
       const text = `${article.title} ${article.description || ''}`.toLowerCase();
       const source = (article.source?.name || '').toLowerCase();
@@ -102,26 +135,83 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
       if (/\b(ai|artificial intelligence|machine learning|openai|chatgpt|bard|llm|deepmind|anthropic|gpt)\b/.test(text)) return 'ai-news';
       return 'other';
     }
-    const filteredArticles = res.data.articles
-      .filter((a: any) => a.urlToImage && typeof a.urlToImage === 'string' && a.urlToImage.trim() !== '')
-      .filter((a: any) => !SOURCE_BLOCKLIST.some(blocked => (a.source?.name || '').toLowerCase().includes(blocked.toLowerCase())))
-      .map((a: any, idx: number) => {
-        const category = categorizeArticle(a);
-        return {
-          id: a.url || String(idx),
-          title: a.title,
-          summary: a.description || a.content || '',
-          url: a.url,
-          source: a.source?.name || '',
-          publishedAt: a.publishedAt ? new Date(a.publishedAt) : new Date(),
-          tags: [],
-          relevance: 1,
-          category,
-          categoryLabel: CATEGORY_LABELS[category] || 'Other',
-          image: a.urlToImage,
-        };
-      });
-    return { articles: filteredArticles, totalResults: res.data.totalResults || 0 };
+    // Accumulate filtered articles until we can serve the requested filtered page
+    const filtered: any[] = [];
+    let rawPage = 1;
+    let reachedEnd = false;
+
+    while (filtered.length < page * pageSize && rawPage <= MAX_RAW_PAGES && !reachedEnd) {
+      const params = buildParams(rawPage);
+      console.log('[NewsAPI] Request params:', params);
+      const res = await axios.get(NEWS_API_URL, { params });
+      console.log('[NewsAPI] Response status:', res.status);
+      const raw = res.data?.articles || [];
+      if (raw.length === 0) reachedEnd = true;
+
+      const pageFiltered = raw
+        .filter((a: any) => a.urlToImage && typeof a.urlToImage === 'string' && a.urlToImage.trim() !== '')
+        .filter((a: any) => !SOURCE_BLOCKLIST.some(blocked => (a.source?.name || '').toLowerCase().includes(blocked.toLowerCase())))
+        .filter((a: any) => !KEYWORD_BLOCKLIST.some(rx => rx.test(`${a.title} ${a.description || ''}`)))
+        .filter((a: any) => isAIArticle(a))
+        .map((a: any) => {
+          const category = categorizeArticle(a);
+          return {
+            id: a.url,
+            title: a.title,
+            summary: a.description || a.content || '',
+            url: a.url,
+            source: a.source?.name || '',
+            publishedAt: a.publishedAt ? new Date(a.publishedAt) : new Date(),
+            tags: [],
+            relevance: 1,
+            category,
+            categoryLabel: CATEGORY_LABELS[category] || 'Other',
+            image: a.urlToImage,
+          } as NewsletterArticle & { categoryLabel: string };
+        });
+      filtered.push(...pageFiltered);
+      rawPage += 1;
+    }
+
+    // If still short for this page, keep fetching a bit more to try to fill it
+    while (!reachedEnd && filtered.length < page * pageSize && rawPage <= MAX_RAW_PAGES) {
+      const params = buildParams(rawPage);
+      const res = await axios.get(NEWS_API_URL, { params });
+      const raw = res.data?.articles || [];
+      if (raw.length === 0) { reachedEnd = true; break; }
+      const pageFiltered = raw
+        .filter((a: any) => a.urlToImage && typeof a.urlToImage === 'string' && a.urlToImage.trim() !== '')
+        .filter((a: any) => !SOURCE_BLOCKLIST.some(blocked => (a.source?.name || '').toLowerCase().includes(blocked.toLowerCase())))
+        .filter((a: any) => !KEYWORD_BLOCKLIST.some(rx => rx.test(`${a.title} ${a.description || ''}`)))
+        .filter((a: any) => isAIArticle(a))
+        .map((a: any) => {
+          const category = categorizeArticle(a);
+          return {
+            id: a.url,
+            title: a.title,
+            summary: a.description || a.content || '',
+            url: a.url,
+            source: a.source?.name || '',
+            publishedAt: a.publishedAt ? new Date(a.publishedAt) : new Date(),
+            tags: [],
+            relevance: 1,
+            category,
+            categoryLabel: CATEGORY_LABELS[category] || 'Other',
+            image: a.urlToImage,
+          } as NewsletterArticle & { categoryLabel: string };
+        });
+      filtered.push(...pageFiltered);
+      rawPage += 1;
+    }
+
+    const start = (page - 1) * pageSize;
+    const end = start + pageSize;
+    const pageArticles = filtered.slice(start, end);
+
+    // Best-effort total filtered count (within our cap); for UI pagination
+    const approxTotal = reachedEnd ? filtered.length : Math.max(filtered.length, page * pageSize + (pageArticles.length < pageSize ? 0 : pageSize));
+
+    return { articles: pageArticles, totalResults: approxTotal };
   } catch (e: any) {
     if (e.response) {
       console.error('[NewsAPI] Error response:', e.response.status, e.response.data);

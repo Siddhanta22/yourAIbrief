@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const email = searchParams.get('email');
 
     if (!email) {
-      return NextResponse.json({ success: false, message: 'Email parameter is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Email parameter required' }, { status: 400 });
     }
 
     const user = await prisma.user.findUnique({
@@ -20,10 +20,11 @@ export async function GET(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json({ exists: false });
+      return NextResponse.json({ 
+        exists: false, 
+        message: 'User not found' 
+      });
     }
-
-    const userPreferences = user.preferences as any;
 
     // For existing users who signed up before email confirmation was implemented,
     // treat them as verified if they have userInterests (meaning they completed signup)
@@ -31,18 +32,28 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       exists: true,
-      name: user.name,
+      user: {
+        id: user.id,
+        email: user.email,
+        emailVerified: user.emailVerified,
+        isActive: user.isActive,
+        preferences: user.preferences,
+        userInterests: user.userInterests,
+      },
       emailVerified: !!isVerified,
-      preferredSendTime: user.preferredSendTime,
-      frequency: userPreferences?.frequency || 'daily',
-      interests: user.userInterests.map(ui => ui.category),
+      verificationLogic: {
+        hasEmailVerified: !!user.emailVerified,
+        hasUserInterests: user.userInterests.length > 0,
+        finalVerification: isVerified
+      },
+      message: 'User found'
     });
 
   } catch (error) {
-    console.error('User exists check error:', error);
+    console.error('Debug user error:', error);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
-} 
+}

@@ -5,12 +5,12 @@ import { motion } from 'framer-motion';
 import { Mail, Check } from 'lucide-react';
 
 interface SubscriptionFormProps {
-  onSubmit: (email: string, interests: string[], deliveryPreferences: {
-    frequency: string;
-    dayOfWeek?: string;
-    dayOfMonth?: string;
-    timeOfDay: string;
-  }) => Promise<void>;
+  onSubmit: (
+    name: string,
+    email: string, 
+    interests: string[], 
+    deliveryPreferences?: { frequency: string; dayOfWeek?: string; dayOfMonth?: string; timeOfDay: string }
+  ) => void;
   isSubmitting?: boolean;
 }
 
@@ -30,18 +30,54 @@ const INTEREST_CATEGORIES = [
 ];
 
 export function SubscriptionForm({ onSubmit, isSubmitting = false }: SubscriptionFormProps) {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [showInterests, setShowInterests] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(false);
   const [frequency, setFrequency] = useState('daily');
   const [dayOfWeek, setDayOfWeek] = useState('Monday');
   const [dayOfMonth, setDayOfMonth] = useState('1');
   const [timeOfDay, setTimeOfDay] = useState('08:00 AM');
 
-  const handleEmailSubmit = (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email && email.includes('@')) {
+    if (!email || !email.includes('@')) return;
+    
+    try {
+      const res = await fetch(`/api/user/exists?email=${encodeURIComponent(email)}`);
+      const data = await res.json();
+      
+      console.log('Email check response:', data); // Debug log
+      
+      if (data?.exists) {
+        if (data?.emailVerified) {
+          // User exists and is verified - redirect to member page
+          console.log('User verified, redirecting to member page'); // Debug log
+          try {
+            localStorage.setItem('subscribedEmail', email);
+          } catch {}
+          window.location.href = '/member';
+          return;
+        } else {
+          // User exists but not verified - show message and send new confirmation
+          console.log('User exists but not verified'); // Debug log
+          alert('Please check your email for a confirmation link. If you didn\'t receive it, we\'ll send a new one.');
+          // Continue to subscription flow to send new confirmation (without name field)
+          setIsNewUser(false);
+          setShowInterests(true);
+          return;
+        }
+      }
+      
+      // New user - continue to interests selection
+      console.log('New user, showing interests'); // Debug log
+      setIsNewUser(true);
+      setShowInterests(true);
+    } catch (error) {
+      console.error('Error checking email:', error);
+      // On error, assume new user and continue
       setShowInterests(true);
     }
   };
@@ -63,14 +99,16 @@ export function SubscriptionForm({ onSubmit, isSubmitting = false }: Subscriptio
 
   const handleFinalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email && selectedInterests.length > 0) {
-      await onSubmit(email, selectedInterests, {
-        frequency,
-        dayOfWeek: frequency === 'weekly' ? dayOfWeek : undefined,
-        dayOfMonth: frequency === 'monthly' ? dayOfMonth : undefined,
-        timeOfDay,
-      });
-    }
+    if (selectedInterests.length === 0) return;
+
+    const deliveryPreferences = {
+      frequency,
+      dayOfWeek,
+      dayOfMonth,
+      timeOfDay,
+    };
+
+    onSubmit(name, email, selectedInterests, deliveryPreferences);
   };
 
   const timeOptions = [];
@@ -125,6 +163,22 @@ export function SubscriptionForm({ onSubmit, isSubmitting = false }: Subscriptio
               Select 3-5 topics for personalized content
             </p>
           </div>
+
+          {/* Name field for new users only */}
+          {isNewUser && (
+            <div>
+              <label className="block mb-1 font-medium text-neutral-900 dark:text-neutral-100">
+                Your Name (optional)
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter your name"
+                className="input-field"
+              />
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
             {INTEREST_CATEGORIES.map((interest) => (
@@ -221,16 +275,13 @@ export function SubscriptionForm({ onSubmit, isSubmitting = false }: Subscriptio
               </div>
             )}
             <div>
-              <label htmlFor="preferredSendTime" className="block text-sm font-medium text-gray-700 mt-4">Preferred Delivery Time</label>
+              <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">Preferred Delivery Time</label>
               <select
-                id="preferredSendTime"
-                name="preferredSendTime"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                className="input-field"
                 required
                 value={timeOfDay}
                 onChange={e => setTimeOfDay(e.target.value)}
               >
-                <option value="" disabled>Select a time</option>
                 {timeOptions.map(time => (
                   <option key={time} value={time}>{time}</option>
                 ))}

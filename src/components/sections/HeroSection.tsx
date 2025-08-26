@@ -1,24 +1,46 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Sparkles, TrendingUp, Users } from 'lucide-react';
+import { ArrowRight, Sparkles, TrendingUp, Users, BookOpen, Settings } from 'lucide-react';
 import { SubscriptionForm } from '@/components/forms/SubscriptionForm';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 
 export function HeroSection() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formMessage, setFormMessage] = useState<string | null>(null);
+  const [localEmail, setLocalEmail] = useState<string | null>(null);
   const router = useRouter();
+  const { data: session, status } = useSession();
 
-  const handleSubscribe = async (email: string, interests: string[]) => {
+  useEffect(() => {
+    try {
+      setLocalEmail(localStorage.getItem('subscribedEmail'));
+    } catch {}
+  }, []);
+
+  const isLoggedIn = status === 'authenticated' || !!localEmail;
+
+  const handleSubscribe = async (
+    name: string,
+    email: string,
+    interests: string[],
+    deliveryPreferences?: { frequency: string; dayOfWeek?: string; dayOfMonth?: string; timeOfDay: string }
+  ) => {
     setIsSubmitting(true);
     setFormMessage(null);
     try {
       const res = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, interests }),
+        body: JSON.stringify({
+          name,
+          email,
+          interests,
+          preferredSendTime: deliveryPreferences?.timeOfDay,
+          frequency: deliveryPreferences?.frequency,
+        }),
       });
       const data = await res.json();
       if (data.success) {
@@ -36,7 +58,7 @@ export function HeroSection() {
   };
 
   return (
-    <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden">
+    <section id="subscribe" className="relative min-h-[60vh] flex items-center justify-center overflow-hidden">
       {/* Background gradient */}
       <div className="absolute inset-0 gradient-bg" />
       
@@ -127,22 +149,73 @@ export function HeroSection() {
             </div>
           </motion.div>
 
-          {/* Subscription form */}
+          {/* Content based on login status */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.8 }}
             className="max-w-md mx-auto"
           >
-            {formMessage && (
-              <div className="mb-4 text-red-600 dark:text-red-400 font-medium">
-                {formMessage}
+            {isLoggedIn ? (
+              // Logged in user content
+              <div className="space-y-6">
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
+                    Welcome back! 👋
+                  </h3>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Here's your AI intelligence summary
+                  </p>
+                </div>
+                
+                {/* Quick Stats */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">12</div>
+                    <div className="text-xs text-neutral-600 dark:text-neutral-400">Newsletters</div>
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">85%</div>
+                    <div className="text-xs text-neutral-600 dark:text-neutral-400">Open Rate</div>
+                  </div>
+                </div>
+                
+                {/* Quick Actions */}
+                <div className="flex flex-col space-y-3">
+                  <button
+                    onClick={() => router.push('/dashboard')}
+                    className="btn-primary w-full flex items-center justify-center"
+                  >
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    View Full Dashboard
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      const email = session?.user?.email || localEmail;
+                      if (email) {
+                        router.push(`/api/user/preferences?email=${encodeURIComponent(email)}`);
+                      }
+                    }}
+                    className="btn-ghost w-full flex items-center justify-center"
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Quick Settings
+                  </button>
+                </div>
               </div>
+            ) : (
+              // Non-logged in user content - subscription form
+              <>
+                {formMessage && (
+                  <div className="mb-4 text-red-600 dark:text-red-400 font-medium">
+                    {formMessage}
+                  </div>
+                )}
+                <SubscriptionForm onSubmit={handleSubscribe} isSubmitting={isSubmitting} />
+              </>
             )}
-            <SubscriptionForm onSubmit={handleSubscribe} isSubmitting={isSubmitting} />
           </motion.div>
-
-
         </motion.div>
       </div>
     </section>

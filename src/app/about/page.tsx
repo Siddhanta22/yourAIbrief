@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Brain, Users, Zap, Shield } from 'lucide-react';
+import { Brain, Users, Zap, Shield, Target, Clock } from 'lucide-react';
 
 export default function AboutPage() {
   return (
@@ -32,11 +32,15 @@ export default function AboutPage() {
             About Me
           </h2>
           <p className="text-lg text-neutral-600 dark:text-neutral-400 leading-relaxed">
-            Hey, I’m Siddhanta 👋<br/>
-            I built this newsletter because AI moves fast—and staying updated shouldn’t feel like a full-time job or a hype-fest.<br/>
-            <br/>
-            Whether you’re a builder, a browser, or just AI-curious, this space is for you. I filter out the noise and deliver the best of AI—tools, research, product launches, weird experiments—in a way that’s easy to follow and actually fun to read.<br/>
-            <br/>
+            Hey, I'm Siddhanta 👋
+          </p>
+          <p className="text-lg text-neutral-600 dark:text-neutral-400 leading-relaxed mb-4">
+            I built this newsletter because AI moves fast, and staying updated shouldn't feel like a full-time job or a hype-fest.
+          </p>
+          <p className="text-lg text-neutral-600 dark:text-neutral-400 leading-relaxed mb-4">
+            Whether you're a builder, a browser, or just AI-curious, this space is for you. I filter out the noise and deliver the best of AI: tools, research, product launches, and breakthrough experiments in a way that's easy to follow and actually enjoyable to read.
+          </p>
+          <p className="text-lg text-neutral-600 dark:text-neutral-400 leading-relaxed">
             No jargon. No hype. Just the good stuff. 🎯
           </p>
         </motion.div>
@@ -51,14 +55,17 @@ export default function AboutPage() {
           <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-4">
             Our Mission
           </h2>
+          <p className="text-lg text-neutral-600 dark:text-neutral-400 leading-relaxed mb-4">
+            Let's be honest: the AI world is overwhelming right now. New models, wild demos, billion-dollar funding rounds. It's a lot to keep up with.
+          </p>
+          <p className="text-lg text-neutral-600 dark:text-neutral-400 leading-relaxed mb-4">
+            My mission? Make it make sense.
+          </p>
+          <p className="text-lg text-neutral-600 dark:text-neutral-400 leading-relaxed mb-4">
+            I dig through papers, product updates, startup launches, and industry moves so you don't have to. Each edition brings you a mix of serious breakthroughs, innovative tools, useful resources, and under-the-radar gems, all curated and explained like you're chatting with a smart friend, not reading a textbook.
+          </p>
           <p className="text-lg text-neutral-600 dark:text-neutral-400 leading-relaxed">
-            Let’s be honest—the AI world is kinda overwhelming right now. New models. Wild demos. Billion-dollar funding rounds. It’s a lot.<br/>
-            <br/>
-            My mission? Make it make sense.<br/>
-            <br/>
-            I dig through papers, product updates, startup launches, and industry moves so you don’t have to. Each edition brings you a mix of serious breakthroughs, quirky tools, useful resources, and under-the-radar gems—all curated and explained like you’re chatting with a smart friend, not reading a textbook.<br/>
-            <br/>
-            The goal: Help you stay ahead of the curve, without burning out trying.
+            The goal: Help you stay ahead of the curve without burning out trying.
           </p>
         </motion.div>
 
@@ -67,7 +74,7 @@ export default function AboutPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16"
         >
           <div className="text-center">
             <div className="p-4 bg-primary-100 dark:bg-primary-900/30 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
@@ -83,25 +90,25 @@ export default function AboutPage() {
 
           <div className="text-center">
             <div className="p-4 bg-secondary-100 dark:bg-secondary-900/30 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <Users className="w-8 h-8 text-secondary-600" />
+              <Target className="w-8 h-8 text-secondary-600" />
             </div>
             <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
-              Community-Driven
+              Personalized Content
             </h3>
             <p className="text-neutral-600 dark:text-neutral-400">
-              Built by AI enthusiasts, for AI enthusiasts. We value your feedback and contributions.
+              Choose your interests and get content tailored to your specific AI focus areas.
             </p>
           </div>
 
           <div className="text-center">
             <div className="p-4 bg-success-100 dark:bg-success-900/30 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <Zap className="w-8 h-8 text-success-600" />
+              <Clock className="w-8 h-8 text-success-600" />
             </div>
             <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
-              Lightning Fast
+              Flexible Delivery
             </h3>
             <p className="text-neutral-600 dark:text-neutral-400">
-              Get breaking AI news within hours of publication, not days or weeks later.
+              Daily, weekly, or monthly delivery at your preferred time.
             </p>
           </div>
 
@@ -116,6 +123,30 @@ export default function AboutPage() {
               Human editorial review ensures accuracy and relevance of all content.
             </p>
           </div>
+
+          <div className="text-center">
+            <div className="p-4 bg-info-100 dark:bg-info-900/30 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <Zap className="w-8 h-8 text-info-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
+              Lightning Fast
+            </h3>
+            <p className="text-neutral-600 dark:text-neutral-400">
+              Get breaking AI news within hours of publication, not days or weeks later.
+            </p>
+          </div>
+
+          <div className="text-center">
+            <div className="p-4 bg-purple-100 dark:bg-purple-900/30 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <Users className="w-8 h-8 text-purple-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
+              Community-Driven
+            </h3>
+            <p className="text-neutral-600 dark:text-neutral-400">
+              Built by AI enthusiasts, for AI enthusiasts. We value your feedback and contributions.
+            </p>
+          </div>
         </motion.div>
 
         {/* Team (Personalized) */}
@@ -126,21 +157,26 @@ export default function AboutPage() {
           className="card p-8 mb-16"
         >
           <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-8 text-center">
-            Who’s Behind This?
+            Meet Your AI Guide
           </h2>
           <div className="flex flex-col items-center justify-center">
-              <div className="w-24 h-24 bg-neutral-200 dark:bg-neutral-700 rounded-full mx-auto mb-4 flex items-center justify-center">
-              <span className="text-2xl font-bold text-neutral-600">SM</span>
-              </div>
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-1">
+            <div className="w-24 h-24 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
+              <span className="text-2xl font-bold text-white">SM</span>
+            </div>
+            <h3 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 mb-1">
               Siddhanta Mohanty
-              </h3>
-              <p className="text-neutral-600 dark:text-neutral-400">
-              Founder, Curator, and Your AI Guide
-              </p>
-            <p className="text-sm text-neutral-500 mt-2 text-center max-w-xl">
-              Newsletter nerd and relentless AI explorer. I’m here to help you cut through the noise and stay genuinely ahead—no fake social proof, no clickbait, just real news and insights that matter.
-              </p>
+            </h3>
+            <p className="text-neutral-600 dark:text-neutral-400 mb-4">
+              Founder & AI Content Curator
+            </p>
+            <p className="text-neutral-600 dark:text-neutral-400 text-center max-w-2xl leading-relaxed">
+              I'm passionate about making AI accessible and understandable. With years of experience in technology and content curation, I've built this newsletter to help professionals like you stay ahead of the AI revolution without getting overwhelmed by the noise. Every piece of content is carefully selected and explained in plain English.
+            </p>
+            <div className="mt-6 flex items-center space-x-4 text-sm text-neutral-500">
+              <span>• AI Enthusiast</span>
+              <span>• Content Curator</span>
+              <span>• Tech Explorer</span>
+            </div>
           </div>
         </motion.div>
 

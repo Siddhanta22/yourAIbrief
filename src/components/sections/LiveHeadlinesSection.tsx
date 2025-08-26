@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80';
 const PAGE_SIZE = 12;
@@ -22,19 +22,8 @@ export default function LiveHeadlinesSection({ news: propNews }: { news?: any[] 
       });
   }, [page]);
 
-  // Filter out duplicate images (allow up to 2 per image)
-  const filteredNews = useMemo(() => {
-    const seenImages = new Map();
-    return (news || []).filter(article => {
-      if (!article.image) return false;
-      const count = seenImages.get(article.image) || 0;
-      if (count >= 2) return false;
-      seenImages.set(article.image, count + 1);
-      return true;
-    });
-  }, [news]);
-
-  const hasNews = filteredNews.length > 0;
+  // Use the server-filtered list as-is to keep page sizes consistent
+  const hasNews = (news || []).length > 0;
   const totalPages = Math.ceil(totalResults / PAGE_SIZE);
 
   return (
@@ -45,7 +34,7 @@ export default function LiveHeadlinesSection({ news: propNews }: { news?: any[] 
       ) : hasNews ? (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 gap-12 w-full px-4 sm:px-8 max-w-screen-2xl mx-auto">
-            {filteredNews.map((article, idx) => (
+            {(news || []).map((article, idx) => (
               <a
                 key={article.url + idx}
                 href={article.url}

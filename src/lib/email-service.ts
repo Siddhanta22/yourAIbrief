@@ -40,15 +40,74 @@ export class EmailService {
       if (
         typeof error === 'object' &&
         error !== null &&
-        Object.prototype.hasOwnProperty.call(error, 'response') &&
-        (error as any).response &&
-        Object.prototype.hasOwnProperty.call((error as any).response, 'body')
+        'response' in error &&
+        error.response &&
+        typeof error.response === 'object' &&
+        'body' in error.response &&
+        error.response.body
       ) {
-        // @ts-ignore
-        console.error('Error sending welcome email:', (error as any).response.body);
+        console.error('SendGrid error:', (error as any).response.body);
       } else {
-      console.error('Error sending welcome email:', error);
+        console.error('SendGrid error:', error);
       }
+      return false;
+    }
+  }
+
+  async sendConfirmationEmail(
+    email: string, 
+    token: string, 
+    preferences: { interests: string[]; preferredSendTime: string; frequency: string }
+  ): Promise<boolean> {
+    try {
+      const confirmationUrl = `${process.env.NEXTAUTH_URL}/api/auth/confirm?token=${token}`;
+      
+      const msg = {
+        to: email,
+        from: {
+          email: this.fromEmail,
+          name: this.fromName,
+        },
+        subject: 'Confirm Your AI Newsletter Subscription 📧',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #2563eb; margin: 0;">🤖 AI Newsletter</h1>
+              <p style="color: #6b7280; margin: 10px 0;">Your Daily AI Intelligence</p>
+            </div>
+            
+            <div style="background: #f8fafc; padding: 30px; border-radius: 10px; margin-bottom: 20px;">
+              <h2 style="color: #1f2937; margin: 0 0 20px 0;">Confirm Your Subscription</h2>
+              <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
+                Thanks for signing up for our AI Newsletter! To complete your subscription and start receiving 
+                curated AI news, please confirm your email address by clicking the button below.
+              </p>
+              
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${confirmationUrl}" 
+                   style="background: #2563eb; color: white; padding: 12px 30px; text-decoration: none; 
+                          border-radius: 6px; display: inline-block; font-weight: bold;">
+                  Confirm Subscription
+                </a>
+              </div>
+              
+              <p style="color: #6b7280; font-size: 14px; margin: 0;">
+                Your preferences: ${preferences.frequency} delivery at ${preferences.preferredSendTime}
+              </p>
+            </div>
+            
+            <div style="text-align: center; color: #6b7280; font-size: 12px;">
+              <p>This link will expire in 24 hours.</p>
+              <p>If you didn't sign up for this newsletter, you can safely ignore this email.</p>
+            </div>
+          </div>
+        `,
+      };
+
+      await sgMail.send(msg);
+      return true;
+    } catch (error) {
+      console.error('Failed to send confirmation email:', error);
       return false;
     }
   }
@@ -67,32 +126,26 @@ export class EmailService {
             email: this.fromEmail,
             name: this.fromName,
           },
-          subject: newsletter.title,
-          templateId: process.env.NEWSLETTER_TEMPLATE_ID || 'd-newsletter-template-id',
-          dynamicTemplateData: {
-            newsletter_title: newsletter.title,
-            newsletter_summary: newsletter.summary,
-            newsletter_content: personalizedContent,
-            user_name: user.name || 'there',
-            unsubscribe_url: `${process.env.NEXTAUTH_URL}/unsubscribe?email=${encodeURIComponent(user.email)}`,
-            view_online_url: `${process.env.NEXTAUTH_URL}/newsletter/${newsletter.id}`,
-          },
+          subject: `${newsletter.title} - ${new Date().toLocaleDateString()}`,
+          html: personalizedContent,
         };
 
         await sgMail.send(msg);
+        console.log(`[EmailService] Newsletter sent successfully to ${user.email}`);
         success++;
       } catch (error) {
         if (
           typeof error === 'object' &&
           error !== null &&
-          Object.prototype.hasOwnProperty.call(error, 'response') &&
-          (error as any).response &&
-          Object.prototype.hasOwnProperty.call((error as any).response, 'body')
+          'response' in error &&
+          error.response &&
+          typeof error.response === 'object' &&
+          'body' in error.response &&
+          error.response.body
         ) {
-          // @ts-ignore
           console.error(`Error sending newsletter to ${user.email}:`, (error as any).response.body);
         } else {
-        console.error(`Error sending newsletter to ${user.email}:`, error);
+          console.error(`Error sending newsletter to ${user.email}:`, error);
         }
         failed++;
       }
