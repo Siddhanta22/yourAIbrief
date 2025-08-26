@@ -6,6 +6,7 @@ const nextConfig = {
   // Disable problematic features
   swcMinify: false,
   compress: false,
+
   images: {
     domains: [
       'images.unsplash.com',
