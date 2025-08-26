@@ -2,6 +2,7 @@
   "buildCommand": "prisma generate && next build",
   "installCommand": "npm install",
   "framework": "nextjs",
+  "ignoreCommand": "echo 'Forcing fresh build'",
   "functions": {
     "app/api/**/*.ts": {
       "maxDuration": 30
