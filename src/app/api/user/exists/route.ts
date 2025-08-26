@@ -3,12 +3,6 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
   try {
-    // Add CORS headers
-    const response = NextResponse.next();
-    response.headers.set('Access-Control-Allow-Origin', '*');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
     const { searchParams } = new URL(request.url);
     const email = searchParams.get('email');
 
@@ -36,7 +30,7 @@ export async function GET(request: NextRequest) {
     // treat them as verified if they have userInterests (meaning they completed signup)
     const isVerified = user.emailVerified || user.userInterests.length > 0;
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       exists: true,
       name: user.name,
       emailVerified: !!isVerified,
@@ -45,12 +39,26 @@ export async function GET(request: NextRequest) {
       interests: user.userInterests.map(ui => ui.category),
     });
 
+    // Add CORS headers
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+    return response;
+
   } catch (error) {
     console.error('User exists check error:', error);
-    return NextResponse.json(
+    const errorResponse = NextResponse.json(
       { success: false, message: 'Internal server error', error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
+    
+    // Add CORS headers to error response too
+    errorResponse.headers.set('Access-Control-Allow-Origin', '*');
+    errorResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    errorResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
+    return errorResponse;
   } finally {
     await prisma.$disconnect();
   }
