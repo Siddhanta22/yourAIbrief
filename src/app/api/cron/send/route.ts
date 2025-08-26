@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { EmailService } from '@/lib/email-service';
 import { ContentCurationService } from '@/lib/content-curation';
 
 export const dynamic = 'force-dynamic';
-
-const prisma = new PrismaClient();
 
 function formatTime(date: Date): string {
   // Stored in UI as "HH:MM AM/PM" (e.g., "08:00 AM")

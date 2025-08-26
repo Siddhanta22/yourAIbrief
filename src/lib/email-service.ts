@@ -155,7 +155,7 @@ export class EmailService {
   }
 
   async sendScheduledNewsletters(currentTime: string) {
-    const prisma = new PrismaClient();
+    const { prisma } = await import('@/lib/prisma');
     // Fetch users whose preferredSendTime matches currentTime
     const users: any[] = await prisma.user.findMany({
       where: { preferredSendTime: currentTime },

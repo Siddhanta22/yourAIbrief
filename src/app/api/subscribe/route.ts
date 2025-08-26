@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { UserRole } from '@/types';
 import crypto from 'crypto';
-
-const prisma = new PrismaClient();
 
 const subscribeSchema = z.object({
   name: z.string().optional(),
