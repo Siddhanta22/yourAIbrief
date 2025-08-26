@@ -1,5 +1,5 @@
 {
-  "buildCommand": "prisma generate && NEXT_TELEMETRY_DISABLED=1 next build",
+  "buildCommand": "npx prisma generate && next build",
   "installCommand": "npm install",
   "framework": "nextjs",
 
