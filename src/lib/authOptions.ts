@@ -6,10 +6,21 @@ import GoogleProvider from 'next-auth/providers/google';
 import { AdapterUser } from 'next-auth/adapters';
 import { SessionStrategy } from 'next-auth';
 
-const prisma = new PrismaClient();
+// Create Prisma client only when needed
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
+
+function getPrismaClient() {
+  if (globalForPrisma.prisma) return globalForPrisma.prisma;
+  
+  const client = new PrismaClient();
+  if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = client;
+  return client;
+}
 
 export const authOptions = {
-  adapter: PrismaAdapter(prisma),
+  adapter: PrismaAdapter(getPrismaClient()),
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -39,7 +50,7 @@ export const authOptions = {
           session.user.hasOnboarded = (user as any).hasOnboarded;
         } else if (token) {
           // fallback: fetch from DB if needed
-          const dbUser = await prisma.user.findUnique({ where: { id: token.sub } });
+          const dbUser = await getPrismaClient().user.findUnique({ where: { id: token.sub } });
           session.user.hasOnboarded = (dbUser as any)?.hasOnboarded ?? false;
         }
       }
@@ -56,7 +67,7 @@ export const authOptions = {
       }
       // Only runs after sign in
       if (user && typeof user === 'object' && 'id' in user) {
-        const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+        const dbUser = await getPrismaClient().user.findUnique({ where: { id: user.id } });
         if ((dbUser as any)?.hasOnboarded === false) {
           return `${baseUrl}/onboarding`;
         }
