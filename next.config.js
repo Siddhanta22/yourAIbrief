@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    serverComponentsExternalPackages: ['@prisma/client'],
+    serverComponentsExternalPackages: ['@prisma/client', 'styled-jsx'],
   },
   // Disable problematic features
   swcMinify: false,
