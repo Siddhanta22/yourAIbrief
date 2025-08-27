@@ -5,6 +5,8 @@ import { Providers } from '@/components/providers/Providers';
 import { Navigation } from '@/components/layout/Navigation';
 import { Footer } from '@/components/layout/Footer';
 import { Toaster } from 'react-hot-toast';
+// Ensure styled-jsx is included in the server bundle on Vercel
+import 'styled-jsx/style';
 
 const inter = Inter({ subsets: ['latin'] });
 
