@@ -44,6 +44,7 @@
     "remark-gfm": "^4.0.0",
     "rss-parser": "^3.13.0",
     "sharp": "^0.33.0",
+    "styled-jsx": "^5.1.7",
     "tailwind-merge": "^2.6.0",
     "zod": "^3.22.4"
   },
