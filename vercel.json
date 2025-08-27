@@ -1,6 +1,6 @@
 {
   "buildCommand": "./build.sh",
-  "installCommand": "npm install",
+  "installCommand": "npm ci",
   "framework": "nextjs",
 
   "functions": {
