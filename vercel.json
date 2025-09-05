@@ -8,6 +8,12 @@
       "maxDuration": 30
     }
   },
+  "crons": [
+    {
+      "path": "/api/cron/send",
+      "schedule": "*/30 * * * *"
+    }
+  ],
   "env": {
     "NODE_ENV": "production",
     "PRISMA_GENERATE_DATAPROXY": "true"
