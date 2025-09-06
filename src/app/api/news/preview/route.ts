@@ -3,8 +3,20 @@ import { ContentCurationService } from '@/lib/content-curation';
 
 export async function GET(request: NextRequest) {
   try {
+    // Check if NEWS_API_KEY is available
+    if (!process.env.NEWS_API_KEY) {
+      console.log('NEWS_API_KEY not available, using fallback content');
+      throw new Error('NEWS_API_KEY not configured');
+    }
+
     const curationService = new ContentCurationService();
     const { articles } = await curationService.fetchContent([], 1, 4); // Get 4 articles for preview
+    
+    // If no articles returned, use fallback
+    if (!articles || articles.length === 0) {
+      console.log('No articles returned from curation service, using fallback');
+      throw new Error('No articles available');
+    }
     
     const response = NextResponse.json({
       success: true,
