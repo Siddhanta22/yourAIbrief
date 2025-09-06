@@ -58,11 +58,13 @@ export function Navigation() {
   }, [openAccount]);
 
   const handleLogout = () => {
+    console.log('Logout clicked, status:', status, 'localEmail:', localEmail);
     setOpenAccount(false);
     
     // Clear localStorage for email-first auth
     try {
       localStorage.removeItem('subscribedEmail');
+      console.log('Cleared localStorage');
     } catch (error) {
       console.error('Error clearing localStorage:', error);
     }
@@ -72,12 +74,16 @@ export function Navigation() {
     
     // Handle NextAuth logout if authenticated
     if (status === 'authenticated') {
+      console.log('Signing out with NextAuth');
       signOut({ callbackUrl: '/' });
     } else {
+      console.log('Redirecting to home and refreshing');
       // For email-first auth, just redirect to home
       router.push('/');
       // Force a page refresh to clear any cached state
-      window.location.reload();
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
     }
   };
 
