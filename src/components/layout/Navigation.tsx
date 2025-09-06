@@ -58,7 +58,9 @@ export function Navigation() {
   }, [openAccount]);
 
   const handleLogout = () => {
+    console.log('=== LOGOUT FUNCTION CALLED ===');
     console.log('Logout clicked, status:', status, 'localEmail:', localEmail);
+    alert('LOGOUT FUNCTION IS BEING CALLED!'); // Temporary test
     setOpenAccount(false);
     
     // Clear localStorage for email-first auth
