@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     // Connect to database
     await prisma.$connect();
 
-    const results = {
+    const results: any = {
       testType,
       timestamp: new Date().toISOString(),
       tests: {} as any,
