@@ -60,7 +60,6 @@ export function Navigation() {
   const handleLogout = () => {
     console.log('=== LOGOUT FUNCTION CALLED ===');
     console.log('Logout clicked, status:', status, 'localEmail:', localEmail);
-    alert('LOGOUT FUNCTION IS BEING CALLED!'); // Temporary test
     setOpenAccount(false);
     
     // Clear localStorage for email-first auth
@@ -78,15 +77,17 @@ export function Navigation() {
     // Handle NextAuth logout if authenticated
     if (status === 'authenticated') {
       console.log('Signing out with NextAuth');
+      // Try NextAuth signOut first
       signOut({ 
         callbackUrl: '/',
-        redirect: true 
+        redirect: false // Don't let NextAuth handle redirect, we'll do it manually
       }).then(() => {
-        console.log('NextAuth signOut completed');
-        // Force a page refresh to ensure clean state
+        console.log('NextAuth signOut completed, now redirecting...');
+        // Force a complete page reload to clear all state
         window.location.href = '/';
       }).catch((error) => {
         console.error('NextAuth signOut error:', error);
+        console.log('Falling back to direct redirect...');
         // Fallback: force redirect
         window.location.href = '/';
       });
