@@ -15,6 +15,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'Email parameter is required' }, { status: 400 });
     }
 
+    // Check if DATABASE_URL is configured
+    if (!process.env.DATABASE_URL) {
+      console.warn('DATABASE_URL not configured, returning default response');
+      return NextResponse.json({
+        exists: false,
+        message: 'Database not configured - treating as new user'
+      });
+    }
+
     // Test database connection
     await prisma.$connect();
 
@@ -53,19 +62,26 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('User exists check error:', error);
-    const errorResponse = NextResponse.json(
-      { success: false, message: 'Internal server error', error: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
     
-    // Add CORS headers to error response too
-    errorResponse.headers.set('Access-Control-Allow-Origin', '*');
-    errorResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    errorResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    // Return a safe fallback response instead of 500 error
+    const fallbackResponse = NextResponse.json({
+      exists: false,
+      message: 'Database error - treating as new user',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     
-    return errorResponse;
+    // Add CORS headers
+    fallbackResponse.headers.set('Access-Control-Allow-Origin', '*');
+    fallbackResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    fallbackResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
+    return fallbackResponse;
   } finally {
-    await prisma.$disconnect();
+    try {
+      await prisma.$disconnect();
+    } catch (disconnectError) {
+      console.error('Error disconnecting from database:', disconnectError);
+    }
   }
 }
 
