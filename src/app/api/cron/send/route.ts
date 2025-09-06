@@ -33,7 +33,7 @@ function parseUserPreferences(preferences: any): Record<string, any> {
   }
 }
 
-// Enhanced user due check with comprehensive logic
+// Enhanced user due check with comprehensive logic for daily cron job
 function isUserDueNow(user: any, now: Date): { isDue: boolean; reason: string } {
   // Check if user has preferred send time
   if (!user.preferredSendTime) {
@@ -44,11 +44,8 @@ function isUserDueNow(user: any, now: Date): { isDue: boolean; reason: string } 
   const prefs = parseUserPreferences(user.preferences);
   const frequency = (prefs.frequency || 'daily') as 'daily'|'weekly'|'monthly';
 
-  // Check time match (with 5-minute tolerance for cron scheduling)
-  const userTime = user.preferredSendTime;
-  const currentTime = formatTime(now);
-  
   // Extract hour and minute from user time (e.g., "08:30 AM")
+  const userTime = user.preferredSendTime;
   const userTimeMatch = userTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
   if (!userTimeMatch) {
     return { isDue: false, reason: 'Invalid time format' };
@@ -62,18 +59,18 @@ function isUserDueNow(user: any, now: Date): { isDue: boolean; reason: string } 
     userHour24 = 0;
   }
 
+  // For Hobby plan: Since we can only run once per day at 8 AM, we'll send to users
+  // whose preferred time is between 6 AM and 10 AM (morning users)
   const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
-
-  // Check if current time matches user's preferred time (within 5 minutes)
-  const timeDiff = Math.abs((currentHour * 60 + currentMinute) - (userHour24 * 60 + parseInt(userMinute)));
-  if (timeDiff > 5) {
-    return { isDue: false, reason: `Time mismatch: current=${currentTime}, preferred=${userTime}` };
+  const isMorningTime = userHour24 >= 6 && userHour24 <= 10;
+  
+  if (!isMorningTime) {
+    return { isDue: false, reason: `Time outside morning window: preferred=${userTime} (6 AM - 10 AM)` };
   }
 
   // Check frequency
   if (frequency === 'daily') {
-    return { isDue: true, reason: 'Daily frequency matched' };
+    return { isDue: true, reason: 'Daily frequency matched (morning window)' };
   }
 
   if (frequency === 'weekly') {
@@ -84,7 +81,7 @@ function isUserDueNow(user: any, now: Date): { isDue: boolean; reason: string } 
       return { isDue: false, reason: `Weekly: current day=${currentDay}, preferred=${desiredDay}` };
     }
     
-    return { isDue: true, reason: 'Weekly frequency matched' };
+    return { isDue: true, reason: 'Weekly frequency matched (morning window)' };
   }
 
   if (frequency === 'monthly') {
@@ -95,7 +92,7 @@ function isUserDueNow(user: any, now: Date): { isDue: boolean; reason: string } 
       return { isDue: false, reason: `Monthly: current day=${currentDay}, preferred=${desiredDay}` };
     }
     
-    return { isDue: true, reason: 'Monthly frequency matched' };
+    return { isDue: true, reason: 'Monthly frequency matched (morning window)' };
   }
 
   return { isDue: false, reason: 'Unknown frequency' };

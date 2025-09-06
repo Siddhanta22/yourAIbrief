@@ -11,11 +11,7 @@
   "crons": [
     {
       "path": "/api/cron/send",
-      "schedule": "*/15 * * * *"
-    },
-    {
-      "path": "/api/newsletter/retry-failed",
-      "schedule": "0 */2 * * *"
+      "schedule": "0 8 * * *"
     }
   ],
   "env": {
