@@ -59,6 +59,7 @@ export function Navigation() {
 
   const handleLogout = () => {
     console.log('Logout clicked, status:', status, 'localEmail:', localEmail);
+    alert('Logout button clicked!'); // Temporary debug alert
     setOpenAccount(false);
     
     // Clear localStorage for email-first auth
@@ -78,9 +79,9 @@ export function Navigation() {
       signOut({ callbackUrl: '/' });
     } else {
       console.log('Redirecting to home and refreshing');
-      // For email-first auth, just redirect to home
+      // For email-first auth, redirect to home and force refresh to show signup form
       router.push('/');
-      // Force a page refresh to clear any cached state
+      // Force a page refresh to clear any cached state and show signup form
       setTimeout(() => {
         window.location.reload();
       }, 100);
