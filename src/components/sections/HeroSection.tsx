@@ -15,9 +15,25 @@ export function HeroSection() {
   const { data: session, status } = useSession();
 
   useEffect(() => {
-    try {
-      setLocalEmail(localStorage.getItem('subscribedEmail'));
-    } catch {}
+    const checkLocalEmail = () => {
+      try {
+        setLocalEmail(localStorage.getItem('subscribedEmail'));
+      } catch {}
+    };
+    
+    // Check initially
+    checkLocalEmail();
+    
+    // Listen for storage changes (when localStorage is cleared from another tab/component)
+    window.addEventListener('storage', checkLocalEmail);
+    
+    // Also check periodically in case of same-tab changes
+    const interval = setInterval(checkLocalEmail, 1000);
+    
+    return () => {
+      window.removeEventListener('storage', checkLocalEmail);
+      clearInterval(interval);
+    };
   }, []);
 
   const isLoggedIn = status === 'authenticated' || !!localEmail;

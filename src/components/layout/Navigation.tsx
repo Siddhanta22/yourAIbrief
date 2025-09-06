@@ -59,7 +59,6 @@ export function Navigation() {
 
   const handleLogout = () => {
     console.log('Logout clicked, status:', status, 'localEmail:', localEmail);
-    alert('Logout button clicked!'); // Temporary debug alert
     setOpenAccount(false);
     
     // Clear localStorage for email-first auth
@@ -70,7 +69,7 @@ export function Navigation() {
       console.error('Error clearing localStorage:', error);
     }
     
-    // Clear local state
+    // Clear local state immediately
     setLocalEmail(null);
     
     // Handle NextAuth logout if authenticated
@@ -79,12 +78,8 @@ export function Navigation() {
       signOut({ callbackUrl: '/' });
     } else {
       console.log('Redirecting to home and refreshing');
-      // For email-first auth, redirect to home and force refresh to show signup form
-      router.push('/');
-      // Force a page refresh to clear any cached state and show signup form
-      setTimeout(() => {
-        window.location.reload();
-      }, 100);
+      // For email-first auth, force a complete page reload to show signup form
+      window.location.href = '/';
     }
   };
 
