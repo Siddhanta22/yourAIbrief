@@ -64,13 +64,14 @@ export function Navigation() {
     // Clear localStorage for email-first auth
     try {
       localStorage.removeItem('subscribedEmail');
-      console.log('Cleared localStorage');
+      console.log('Cleared localStorage, current value:', localStorage.getItem('subscribedEmail'));
     } catch (error) {
       console.error('Error clearing localStorage:', error);
     }
     
     // Clear local state immediately
     setLocalEmail(null);
+    console.log('Set localEmail to null');
     
     // Handle NextAuth logout if authenticated
     if (status === 'authenticated') {
@@ -79,6 +80,7 @@ export function Navigation() {
     } else {
       console.log('Redirecting to home and refreshing');
       // For email-first auth, force a complete page reload to show signup form
+      console.log('About to redirect to /');
       window.location.href = '/';
     }
   };

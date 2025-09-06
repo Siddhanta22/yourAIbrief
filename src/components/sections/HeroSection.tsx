@@ -17,7 +17,9 @@ export function HeroSection() {
   useEffect(() => {
     const checkLocalEmail = () => {
       try {
-        setLocalEmail(localStorage.getItem('subscribedEmail'));
+        const email = localStorage.getItem('subscribedEmail');
+        console.log('HeroSection checking localStorage:', email);
+        setLocalEmail(email);
       } catch {}
     };
     
@@ -37,6 +39,7 @@ export function HeroSection() {
   }, []);
 
   const isLoggedIn = status === 'authenticated' || !!localEmail;
+  console.log('HeroSection isLoggedIn:', isLoggedIn, 'status:', status, 'localEmail:', localEmail);
 
   const handleSubscribe = async (
     name: string,
