@@ -1,20 +1,77 @@
 import sgMail from '@sendgrid/mail';
 import { Newsletter, User } from '@/types';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 
 export class EmailService {
   private apiKey: string;
   private fromEmail: string;
   private fromName: string;
+  private isConfigured: boolean;
 
   constructor() {
     this.apiKey = process.env.SENDGRID_API_KEY || '';
     this.fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@ai-newsletter.com';
     this.fromName = process.env.SENDGRID_FROM_NAME || 'AI Newsletter';
+    this.isConfigured = !!this.apiKey;
     
     if (this.apiKey) {
       sgMail.setApiKey(this.apiKey);
+    } else {
+      console.warn('[EmailService] SENDGRID_API_KEY not configured');
     }
+  }
+
+  // Enhanced validation
+  private validateConfiguration(): { valid: boolean; error?: string } {
+    if (!this.isConfigured) {
+      return { valid: false, error: 'SendGrid API key not configured' };
+    }
+    
+    if (!this.fromEmail || !this.fromName) {
+      return { valid: false, error: 'From email or name not configured' };
+    }
+    
+    return { valid: true };
+  }
+
+  // Enhanced email sending with retry logic
+  private async sendWithRetry(msg: any, maxRetries: number = 3): Promise<{ success: boolean; error?: string }> {
+    const config = this.validateConfiguration();
+    if (!config.valid) {
+      return { success: false, error: config.error };
+    }
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`[EmailService] Sending email (attempt ${attempt}/${maxRetries}) to ${msg.to}`);
+        
+        const response = await sgMail.send(msg);
+        console.log(`[EmailService] Email sent successfully to ${msg.to}`, response[0]?.statusCode);
+        
+        return { success: true };
+      } catch (error) {
+        console.error(`[EmailService] Attempt ${attempt} failed for ${msg.to}:`, error);
+        
+        if (attempt === maxRetries) {
+          // Log detailed error information
+          if (error && typeof error === 'object' && 'response' in error) {
+            const sgError = error as any;
+            console.error('[EmailService] SendGrid error details:', {
+              statusCode: sgError.code,
+              message: sgError.message,
+              response: sgError.response?.body
+            });
+            return { success: false, error: `SendGrid error: ${sgError.message}` };
+          }
+          return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+        }
+        
+        // Wait before retry (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+      }
+    }
+    
+    return { success: false, error: 'Max retries exceeded' };
   }
 
   async sendWelcomeEmail(user: User): Promise<boolean> {
@@ -116,8 +173,12 @@ export class EmailService {
     let success = 0;
     let failed = 0;
 
+    console.log(`[EmailService] Starting newsletter delivery to ${users.length} users`);
+
     for (const user of users) {
       try {
+        console.log(`[EmailService] Processing user: ${user.email}`);
+        
         const personalizedContent = await this.personalizeNewsletter(newsletter, user);
         
         const msg = {
@@ -128,29 +189,94 @@ export class EmailService {
           },
           subject: `${newsletter.title} - ${new Date().toLocaleDateString()}`,
           html: personalizedContent,
+          // Add tracking and unsubscribe links
+          trackingSettings: {
+            clickTracking: { enable: true },
+            openTracking: { enable: true },
+          },
+          customArgs: {
+            userId: user.id,
+            newsletterId: newsletter.id,
+            userEmail: user.email,
+          },
         };
 
-        await sgMail.send(msg);
-        console.log(`[EmailService] Newsletter sent successfully to ${user.email}`);
-        success++;
-      } catch (error) {
-        if (
-          typeof error === 'object' &&
-          error !== null &&
-          'response' in error &&
-          error.response &&
-          typeof error.response === 'object' &&
-          'body' in error.response &&
-          error.response.body
-        ) {
-          console.error(`Error sending newsletter to ${user.email}:`, (error as any).response.body);
+        const result = await this.sendWithRetry(msg);
+        
+        if (result.success) {
+          success++;
+          console.log(`[EmailService] Newsletter sent successfully to ${user.email}`);
+          
+          // Log successful delivery
+          try {
+            await prisma.emailLog.create({
+              data: {
+                to: user.email,
+                subject: newsletter.title,
+                status: 'SENT',
+                sentAt: new Date(),
+                metadata: {
+                  userId: user.id,
+                  newsletterId: newsletter.id,
+                  userPreferences: user.preferences,
+                }
+              }
+            });
+          } catch (logError) {
+            console.error(`[EmailService] Failed to log delivery for ${user.email}:`, logError);
+          }
         } else {
-          console.error(`Error sending newsletter to ${user.email}:`, error);
+          failed++;
+          console.error(`[EmailService] Failed to send newsletter to ${user.email}: ${result.error}`);
+          
+          // Log failed delivery
+          try {
+            await prisma.emailLog.create({
+              data: {
+                to: user.email,
+                subject: newsletter.title,
+                status: 'FAILED',
+                sentAt: new Date(),
+                metadata: {
+                  userId: user.id,
+                  newsletterId: newsletter.id,
+                  error: result.error,
+                  userPreferences: user.preferences,
+                }
+              }
+            });
+          } catch (logError) {
+            console.error(`[EmailService] Failed to log failure for ${user.email}:`, logError);
+          }
         }
+      } catch (error) {
         failed++;
+        console.error(`[EmailService] Unexpected error processing ${user.email}:`, error);
+        
+        // Log unexpected error
+        try {
+          await prisma.emailLog.create({
+            data: {
+              to: user.email,
+              subject: newsletter.title,
+              status: 'FAILED',
+              sentAt: new Date(),
+              metadata: {
+                userId: user.id,
+                newsletterId: newsletter.id,
+                error: error instanceof Error ? error.message : 'Unknown error',
+                stack: error instanceof Error ? error.stack : undefined,
+                userPreferences: user.preferences,
+              }
+            }
+          });
+        } catch (logError) {
+          console.error(`[EmailService] Failed to log unexpected error for ${user.email}:`, logError);
+        }
       }
     }
 
+    console.log(`[EmailService] Newsletter delivery completed: ${success} success, ${failed} failed`);
     return { success, failed };
   }
 
