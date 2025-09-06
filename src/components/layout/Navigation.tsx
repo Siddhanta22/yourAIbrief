@@ -76,7 +76,18 @@ export function Navigation() {
     // Handle NextAuth logout if authenticated
     if (status === 'authenticated') {
       console.log('Signing out with NextAuth');
-      signOut({ callbackUrl: '/' });
+      signOut({ 
+        callbackUrl: '/',
+        redirect: true 
+      }).then(() => {
+        console.log('NextAuth signOut completed');
+        // Force a page refresh to ensure clean state
+        window.location.href = '/';
+      }).catch((error) => {
+        console.error('NextAuth signOut error:', error);
+        // Fallback: force redirect
+        window.location.href = '/';
+      });
     } else {
       console.log('Redirecting to home and refreshing');
       // For email-first auth, force a complete page reload to show signup form
