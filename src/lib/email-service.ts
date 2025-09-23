@@ -113,11 +113,11 @@ export class EmailService {
 
   async sendConfirmationEmail(
     email: string, 
-    token: string, 
-    preferences: { interests: string[]; preferredSendTime: string; frequency: string }
+    userId: string, 
+    preferences?: { interests: string[]; preferredSendTime: string; frequency: string }
   ): Promise<boolean> {
     try {
-      const confirmationUrl = `${process.env.NEXTAUTH_URL}/api/auth/confirm?token=${token}`;
+      const confirmationUrl = `${process.env.NEXTAUTH_URL}/api/auth/confirm?token=${userId}`;
       
       const msg = {
         to: email,

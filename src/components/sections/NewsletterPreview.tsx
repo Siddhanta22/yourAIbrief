@@ -12,12 +12,18 @@ export function NewsletterPreview() {
     const fetchNews = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/news/preview');
+        // Always bypass cache so homepage shows fresh cards
+        const response = await fetch('/api/news/preview', { cache: 'no-store' });
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        setArticles(data.articles || []);
+        const received: NewsletterArticle[] = data?.articles || [];
+        if (!received || received.length === 0) {
+          // Ensure we always have preview cards even if API responds with 0
+          throw new Error('No articles in response');
+        }
+        setArticles(received);
       } catch (err) {
         console.error('Error fetching news preview:', err);
         setError('Failed to load news preview');
@@ -45,6 +51,28 @@ export function NewsletterPreview() {
             relevance: 0.8,
             category: 'ai-news'
           }
+          {
+            id: '3',
+            title: 'AI-Powered Drug Discovery Accelerates by 10x',
+            summary: 'New machine learning algorithms are reducing drug discovery timelines from years to months.',
+            url: '#',
+            source: 'Nature',
+            publishedAt: new Date(),
+            tags: ['healthtech', 'drug-discovery', 'ml'],
+            relevance: 0.7,
+            category: 'healthtech'
+          },
+          {
+            id: '4',
+            title: 'Quantum Computing Breakthrough for AI Training',
+            summary: 'Quantum algorithms could dramatically speed up AI model training and inference.',
+            url: '#',
+            source: 'Science',
+            publishedAt: new Date(),
+            tags: ['quantum', 'ai-training', 'breakthrough'],
+            relevance: 0.6,
+            category: 'research'
+          }
         ]);
       } finally {
         setLoading(false);
@@ -57,7 +85,7 @@ export function NewsletterPreview() {
   return (
     <section className="py-20 bg-neutral-50 dark:bg-neutral-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
+        <div className="text-center mb-8 sm:mb-12">
           <h2 className="text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-neutral-100 mb-4">
             See What You'll Get
           </h2>
@@ -66,53 +94,63 @@ export function NewsletterPreview() {
           </p>
         </div>
         
-        <div className="card max-w-4xl mx-auto p-8">
-          <div className="space-y-6">
-            <div className="border-b border-neutral-200 dark:border-neutral-700 pb-4">
-              <h3 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-2">
-                AI Breakthroughs & Research
-              </h3>
-              <p className="text-neutral-600 dark:text-neutral-400">
-                Latest papers, discoveries, and scientific advances in artificial intelligence.
-              </p>
+        <div className="card max-w-6xl mx-auto p-6 sm:p-8">
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="rounded-xl overflow-hidden bg-neutral-50 dark:bg-neutral-700 animate-pulse">
+                  <div className="h-36 bg-neutral-200 dark:bg-neutral-600" />
+                  <div className="p-4">
+                    <div className="h-4 bg-neutral-200 dark:bg-neutral-600 rounded mb-2"></div>
+                    <div className="h-3 bg-neutral-200 dark:bg-neutral-600 rounded w-2/3"></div>
+                  </div>
+                </div>
+              ))}
             </div>
-            
-            {loading ? (
-              <div className="space-y-4">
-                <div className="p-4 bg-neutral-50 dark:bg-neutral-700 rounded-lg animate-pulse">
-                  <div className="h-4 bg-neutral-200 dark:bg-neutral-600 rounded mb-2"></div>
-                  <div className="h-3 bg-neutral-200 dark:bg-neutral-600 rounded mb-2"></div>
-                  <div className="h-3 bg-neutral-200 dark:bg-neutral-600 rounded w-2/3"></div>
-                </div>
-                <div className="p-4 bg-neutral-50 dark:bg-neutral-700 rounded-lg animate-pulse">
-                  <div className="h-4 bg-neutral-200 dark:bg-neutral-600 rounded mb-2"></div>
-                  <div className="h-3 bg-neutral-200 dark:bg-neutral-600 rounded mb-2"></div>
-                  <div className="h-3 bg-neutral-200 dark:bg-neutral-600 rounded w-2/3"></div>
-                </div>
-              </div>
-            ) : error ? (
-              <div className="text-center text-neutral-600 dark:text-neutral-400">
-                <p>{error}</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {articles.map((article) => (
-                  <div key={article.id} className="p-4 bg-neutral-50 dark:bg-neutral-700 rounded-lg">
-                    <h4 className="font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
+          ) : articles.length === 0 ? (
+            <div className="text-center text-neutral-600 dark:text-neutral-400">
+              <p>No preview articles available right now. Please check back later.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {articles.map((article) => (
+                <a
+                  key={article.id}
+                  href={(article as any).url || '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group rounded-xl overflow-hidden bg-neutral-50 dark:bg-neutral-700 hover:shadow-lg transition-shadow"
+                >
+                  {Boolean((article as any).image) && (
+                    <div className="h-40 bg-neutral-200 dark:bg-neutral-600 overflow-hidden">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={(article as any).image}
+                        alt={(article as any).title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                  )}
+                  <div className="p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs px-2 py-1 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">
+                        {(article as any).categoryLabel || (article as any).category || 'AI'}
+                      </span>
+                      <span className="text-xs text-neutral-500">
+                        {new Date(article.publishedAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <h4 className="font-semibold text-neutral-900 dark:text-neutral-100 mb-2 line-clamp-2">
                       {article.title}
                     </h4>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-2">
+                    <p className="text-sm text-neutral-600 dark:text-neutral-300 line-clamp-3">
                       {article.summary}
                     </p>
-                    <div className="flex items-center justify-between text-xs text-neutral-500">
-                      <span>Source: {article.source}</span>
-                      <span>{new Date(article.publishedAt).toLocaleDateString()}</span>
-                    </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                </a>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </section>

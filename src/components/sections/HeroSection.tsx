@@ -52,7 +52,7 @@ export function HeroSection() {
     try {
       console.log('Submitting subscription:', { name, email, interests, deliveryPreferences });
       
-      let res = await fetch('/api/simple', {
+      const res = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -63,12 +63,6 @@ export function HeroSection() {
           frequency: deliveryPreferences?.frequency,
         }),
       });
-      
-      // If environment blocks POST (405), retry with GET as a smoke test
-      if (res.status === 405) {
-        console.warn('POST returned 405, retrying with GET /api/simple');
-        res = await fetch('/api/simple');
-      }
       
       console.log('Response status:', res.status);
       console.log('Response headers:', Object.fromEntries(res.headers.entries()));
@@ -84,7 +78,20 @@ export function HeroSection() {
       console.log('API Response data:', data);
       
       if (data.success) {
-        router.push('/subscribed');
+        // Store email in localStorage for email-first auth
+        try {
+          localStorage.setItem('subscribedEmail', email);
+          console.log('Stored email in localStorage:', email);
+        } catch (error) {
+          console.error('Failed to store email in localStorage:', error);
+        }
+        
+        setFormMessage('Subscription successful! Please check your email to confirm your subscription.');
+        
+        // Redirect to success page after a short delay
+        setTimeout(() => {
+          router.push('/subscribed');
+        }, 2000);
       } else if (data.alreadySubscribed) {
         setFormMessage('You are already subscribed with this email address.');
       } else {
