@@ -149,7 +149,7 @@ export class EmailService {
               </div>
               
               <p style="color: #6b7280; font-size: 14px; margin: 0;">
-                Your preferences: ${preferences.frequency} delivery at ${preferences.preferredSendTime}
+                Your preferences: ${preferences?.frequency || 'daily'} delivery at ${preferences?.preferredSendTime || '08:00'}
               </p>
             </div>
             

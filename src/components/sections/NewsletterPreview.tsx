@@ -50,7 +50,7 @@ export function NewsletterPreview() {
             tags: ['multimodal', 'openai', 'understanding'],
             relevance: 0.8,
             category: 'ai-news'
-          }
+          },
           {
             id: '3',
             title: 'AI-Powered Drug Discovery Accelerates by 10x',
