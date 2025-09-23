@@ -4,6 +4,7 @@ import './globals.css';
 import { Providers } from '@/components/providers/Providers';
 import { Navigation } from '@/components/layout/Navigation';
 import { Footer } from '@/components/layout/Footer';
+import { SessionChecker } from '@/components/SessionChecker';
 import { Toaster } from 'react-hot-toast';
 // Ensure styled-jsx is included in the server bundle on Vercel
 // (removed) explicit styled-jsx import; not needed and breaks server build
@@ -70,6 +71,7 @@ export default function RootLayout({
     <html lang="en" className="h-full" suppressHydrationWarning>
       <body className={`${inter.className} h-full antialiased`}>
         <Providers>
+          <SessionChecker />
           <Navigation />
           {children}
           <Footer />

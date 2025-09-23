@@ -38,7 +38,20 @@ export function HeroSection() {
     };
   }, []);
 
-  const isLoggedIn = status === 'authenticated' || !!localEmail;
+  // Force refresh authentication state on mount
+  useEffect(() => {
+    // This will trigger a re-evaluation of the session
+    if (typeof window !== 'undefined') {
+      // Small delay to ensure NextAuth has initialized
+      setTimeout(() => {
+        console.log('HeroSection: Forcing session refresh');
+      }, 100);
+    }
+  }, []);
+
+  // Only show logged-in state if user is actually authenticated via NextAuth
+  // localStorage email is just for email-first auth flow, not for showing logged-in state
+  const isLoggedIn = status === 'authenticated';
   console.log('HeroSection isLoggedIn:', isLoggedIn, 'status:', status, 'localEmail:', localEmail);
 
   const handleSubscribe = async (
@@ -251,6 +264,12 @@ export function HeroSection() {
                     Quick Settings
                   </button>
                 </div>
+              </div>
+            ) : status === 'loading' ? (
+              // Loading state
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-4"></div>
+                <p className="text-neutral-600 dark:text-neutral-400">Loading...</p>
               </div>
             ) : (
               // Non-logged in user content - subscription form

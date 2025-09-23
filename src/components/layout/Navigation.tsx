@@ -57,7 +57,7 @@ export function Navigation() {
     };
   }, [openAccount]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     console.log('=== LOGOUT FUNCTION CALLED ===');
     console.log('Logout clicked, status:', status, 'localEmail:', localEmail);
     setOpenAccount(false);
@@ -77,26 +77,20 @@ export function Navigation() {
     // Handle NextAuth logout if authenticated
     if (status === 'authenticated') {
       console.log('Signing out with NextAuth');
-      // Try NextAuth signOut first
-      signOut({ 
-        callbackUrl: '/',
-        redirect: false // Don't let NextAuth handle redirect, we'll do it manually
-      }).then(() => {
+      try {
+        await signOut({ 
+          callbackUrl: '/',
+          redirect: false // Don't let NextAuth handle redirect, we'll do it manually
+        });
         console.log('NextAuth signOut completed, now redirecting...');
-        // Force a complete page reload to clear all state
-        window.location.href = '/';
-      }).catch((error) => {
+      } catch (error) {
         console.error('NextAuth signOut error:', error);
-        console.log('Falling back to direct redirect...');
-        // Fallback: force redirect
-        window.location.href = '/';
-      });
-    } else {
-      console.log('Redirecting to home and refreshing');
-      // For email-first auth, force a complete page reload to show signup form
-      console.log('About to redirect to /');
-      window.location.href = '/';
+      }
     }
+    
+    // Always force a complete page reload to clear all state
+    console.log('About to redirect to /');
+    window.location.href = '/';
   };
 
   const navigation = [
@@ -152,7 +146,9 @@ export function Navigation() {
 
             {/* User Menu */}
             <div className="hidden md:flex items-center space-x-2">
-              {(status === 'authenticated' || !!localEmail) ? (
+              {status === 'loading' ? (
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
+              ) : status === 'authenticated' ? (
                 <div className="relative" ref={accountMenuRef}>
                   <button
                     onClick={() => setOpenAccount(v => !v)}
@@ -227,7 +223,11 @@ export function Navigation() {
                 </Link>
               ))}
               <div className="pt-4 border-t border-neutral-200 dark:border-neutral-700">
-                {(status === 'authenticated' || !!localEmail) ? (
+                {status === 'loading' ? (
+                  <div className="flex items-center justify-center py-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600"></div>
+                  </div>
+                ) : status === 'authenticated' ? (
                   <>
                     <button
                       onClick={() => { setIsOpen(false); handleLogout(); }}
