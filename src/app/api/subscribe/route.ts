@@ -171,9 +171,19 @@ export async function DELETE(request: NextRequest) {
       }
     });
 
+    // Send confirmation email
+    try {
+      const emailService = new SimpleEmailService();
+      await emailService.sendUnsubscribeConfirmation(user.email, user.name || undefined);
+      console.log('Unsubscribe confirmation email sent to:', user.email);
+    } catch (emailError) {
+      console.error('Failed to send unsubscribe confirmation email:', emailError);
+      // Don't fail the unsubscribe if email fails
+    }
+
     return NextResponse.json({
       success: true,
-      message: 'Successfully unsubscribed'
+      message: 'Successfully unsubscribed. You will receive a confirmation email shortly.'
     }, {
       headers: {
         'Access-Control-Allow-Origin': '*',

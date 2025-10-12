@@ -75,6 +75,11 @@ export function Footer() {
                   Privacy Policy
                 </Link>
               </li>
+              <li>
+                <Link href="/unsubscribe" className="text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors">
+                  Unsubscribe
+                </Link>
+              </li>
             </ul>
           </div>
 

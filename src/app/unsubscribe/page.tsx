@@ -1,5 +1,7 @@
 "use client";
 import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Mail, CheckCircle, AlertCircle } from 'lucide-react';
 
 const REASONS = [
   'Too many emails',
@@ -39,17 +41,45 @@ export default function UnsubscribePage() {
 
   if (submitted) {
     return (
-      <div className="max-w-lg mx-auto py-24 text-center">
-        <h1 className="text-3xl font-bold mb-4">You’ve been unsubscribed</h1>
-        <p className="text-neutral-600 mb-8">We’re sorry to see you go. If you change your mind, you’re always welcome back!</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center"
+        >
+          <div className="mb-6">
+            <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-4" />
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">You've been unsubscribed</h1>
+            <p className="text-gray-600">
+              We're sorry to see you go. You will no longer receive emails from YourAIbrief.
+            </p>
+          </div>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-500">
+              If you change your mind, you can always resubscribe by visiting our homepage.
+            </p>
+          </div>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-lg mx-auto py-24">
-      <h1 className="text-3xl font-bold mb-6 text-center">Unsubscribe</h1>
-      <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-neutral-900 p-8 rounded-xl shadow">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8"
+      >
+        <div className="text-center mb-6">
+          <Mail className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Unsubscribe</h1>
+          <p className="text-gray-600">We're sorry to see you go</p>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label className="block mb-2 font-medium">Your Email</label>
           <input
@@ -84,14 +114,20 @@ export default function UnsubscribePage() {
             />
           )}
         </div>
-        {error && <div className="text-red-600 font-medium">{error}</div>}
+        {error && (
+          <div className="flex items-center text-red-600 bg-red-50 p-3 rounded-lg">
+            <AlertCircle className="w-5 h-5 mr-2" />
+            <span className="font-medium">{error}</span>
+          </div>
+        )}
         <button
           type="submit"
-          className="w-full bg-primary-600 text-white font-bold py-2 rounded hover:bg-primary-700 transition"
+          className="w-full bg-red-600 text-white font-bold py-3 rounded-lg hover:bg-red-700 transition-colors"
         >
           Unsubscribe
         </button>
-      </form>
+        </form>
+      </motion.div>
     </div>
   );
 } 
