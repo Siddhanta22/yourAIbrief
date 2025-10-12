@@ -99,7 +99,7 @@ function isUserDueNow(user: any, now: Date): { isDue: boolean; reason: string } 
 }
 
 // Check if user has already received newsletter today
-async function hasReceivedToday(userId: string, now: Date): Promise<boolean> {
+async function hasReceivedToday(userEmail: string, now: Date): Promise<boolean> {
   const startOfDay = new Date(now);
   startOfDay.setHours(0, 0, 0, 0);
   
@@ -108,7 +108,7 @@ async function hasReceivedToday(userId: string, now: Date): Promise<boolean> {
 
   const existingLog = await prisma.emailLog.findFirst({
     where: {
-      to: { contains: userId }, // Assuming email contains user info
+      to: userEmail, // Use email directly instead of userId
       sentAt: {
         gte: startOfDay,
         lte: endOfDay
@@ -158,6 +158,12 @@ export async function GET(request: NextRequest) {
     });
 
     console.log(`[Cron] Found ${users.length} total active users with send times`);
+    console.log(`[Cron] Current time: ${now.toISOString()} (UTC: ${now.getHours()}:${now.getMinutes()})`);
+    
+    // Log first few users for debugging
+    users.slice(0, 3).forEach(user => {
+      console.log(`[Cron] Sample user: ${user.email}, time: ${user.preferredSendTime}, interests: ${user.userInterests.length}`);
+    });
 
     // Enhanced user filtering with detailed logging
     const dueUsers = [];
@@ -196,7 +202,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Check if user already received newsletter today
-      const alreadyReceived = await hasReceivedToday(user.id, now);
+      const alreadyReceived = await hasReceivedToday(user.email, now);
       if (alreadyReceived) {
         skippedReasons.alreadyReceived++;
         console.log(`[Cron] Skipping ${user.email}: already received today`);
