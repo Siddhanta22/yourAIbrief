@@ -13,7 +13,7 @@ export function Footer() {
             <div className="flex items-center space-x-2 mb-4">
               <Mail className="w-8 h-8 text-primary-600" />
               <span className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
-                AI Newsletter
+                YourAIbrief
               </span>
             </div>
             <p className="text-neutral-600 dark:text-neutral-400 mb-4 max-w-md">
@@ -106,7 +106,7 @@ export function Footer() {
         <div className="border-t border-neutral-200 dark:border-neutral-700 mt-8 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-sm text-neutral-600 dark:text-neutral-400">
-              © 2024 AI Newsletter. All rights reserved.
+              © 2024 YourAIbrief. All rights reserved.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <Link href="/terms" className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors">

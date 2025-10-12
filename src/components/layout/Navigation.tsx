@@ -159,7 +159,7 @@ export function Navigation() {
             <Link href="/" className="flex items-center space-x-2">
               <Mail className="w-8 h-8 text-primary-600" />
               <span className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
-                AI Newsletter
+                YourAIbrief
               </span>
             </Link>
           </motion.div>

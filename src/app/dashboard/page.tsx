@@ -59,7 +59,7 @@ export default function DashboardPage() {
           <div className="flex justify-center items-center h-16">
             <div className="flex items-center">
               <Mail className="w-8 h-8 text-blue-600 mr-3" />
-              <h1 className="text-xl font-bold text-gray-900">AI Newsletter Dashboard</h1>
+              <h1 className="text-xl font-bold text-gray-900">YourAIbrief Dashboard</h1>
             </div>
           </div>
         </div>

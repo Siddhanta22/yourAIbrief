@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({
       success: true,
-      message: 'Subscription successful! Welcome to AI Newsletter! Check your email for a welcome message.',
+      message: 'Subscription successful! Welcome to YourAIbrief! Check your email for a welcome message.',
       user: {
         id: user.id,
         email: user.email,

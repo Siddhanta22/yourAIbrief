@@ -11,12 +11,12 @@ import { Toaster } from 'react-hot-toast';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'AI Newsletter - Your Daily AI Intelligence',
+  title: 'YourAIbrief - Your Daily AI Intelligence',
   description: 'Stay ahead with curated AI news, breakthroughs, and insights delivered to your inbox daily. Personalized content for researchers, developers, and AI enthusiasts.',
   keywords: 'AI, artificial intelligence, machine learning, newsletter, tech news, AI research, deep learning',
-  authors: [{ name: 'AI Newsletter Team' }],
-  creator: 'AI Newsletter Platform',
-  publisher: 'AI Newsletter',
+  authors: [{ name: 'YourAIbrief Team' }],
+  creator: 'YourAIbrief Platform',
+  publisher: 'YourAIbrief',
   formatDetection: {
     email: false,
     address: false,
@@ -24,16 +24,16 @@ export const metadata: Metadata = {
   },
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
   openGraph: {
-    title: 'AI Newsletter - Your Daily AI Intelligence',
+    title: 'YourAIbrief - Your Daily AI Intelligence',
     description: 'Stay ahead with curated AI news, breakthroughs, and insights delivered to your inbox daily.',
     url: '/',
-    siteName: 'AI Newsletter',
+    siteName: 'YourAIbrief',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'AI Newsletter',
+        alt: 'YourAIbrief',
       },
     ],
     locale: 'en_US',
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'AI Newsletter - Your Daily AI Intelligence',
+    title: 'YourAIbrief - Your Daily AI Intelligence',
     description: 'Stay ahead with curated AI news, breakthroughs, and insights delivered to your inbox daily.',
     images: ['/og-image.png'],
   },

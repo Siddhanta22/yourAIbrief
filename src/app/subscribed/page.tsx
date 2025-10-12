@@ -25,7 +25,7 @@ export default function SubscribedPage() {
             Successfully Subscribed! 🎉
           </h1>
           <p className="text-gray-600">
-            Welcome to AI Newsletter! You'll receive your first newsletter tomorrow at 8:00 AM.
+            Welcome to YourAIbrief! You'll receive your first newsletter tomorrow at 8:00 AM.
           </p>
         </div>
         

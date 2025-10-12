@@ -11,7 +11,7 @@ export default function SignInPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-100 dark:from-neutral-900 dark:via-neutral-800 dark:to-neutral-900">
       <div className="w-full max-w-md mx-auto bg-white dark:bg-neutral-900 rounded-xl shadow-lg p-8 flex flex-col items-center">
         <div className="mb-6 flex flex-col items-center">
-          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-1">Welcome to AI Newsletter</h1>
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-1">Welcome to YourAIbrief</h1>
           <p className="text-neutral-600 dark:text-neutral-400 text-center">Sign in to personalize your AI news experience.</p>
         </div>
         <div className="w-full space-y-3">

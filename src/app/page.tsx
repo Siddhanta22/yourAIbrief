@@ -73,7 +73,7 @@ export default function Home() {
     const error = searchParams.get('error');
 
     if (success === 'email-confirmed') {
-      toast.success('Email confirmed! Welcome to AI Newsletter! 🎉');
+      toast.success('Email confirmed! Welcome to YourAIbrief! 🎉');
     } else if (error === 'invalid-token') {
       toast.error('Invalid confirmation link. Please try signing up again.');
     } else if (error === 'expired-token') {

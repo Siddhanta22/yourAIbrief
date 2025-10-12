@@ -11,7 +11,7 @@ export class EmailService {
   constructor() {
     this.apiKey = process.env.SENDGRID_API_KEY || '';
     this.fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@ai-newsletter.com';
-    this.fromName = process.env.SENDGRID_FROM_NAME || 'AI Newsletter';
+    this.fromName = process.env.SENDGRID_FROM_NAME || 'YourAIbrief';
     this.isConfigured = !!this.apiKey;
     
     if (this.apiKey) {
@@ -82,7 +82,7 @@ export class EmailService {
           email: this.fromEmail,
           name: this.fromName,
         },
-        subject: 'Welcome to AI Newsletter! 🚀',
+        subject: 'Welcome to YourAIbrief! 🚀',
         templateId: process.env.WELCOME_EMAIL_TEMPLATE_ID || 'd-welcome-template-id',
         dynamicTemplateData: {
           user_name: user.name || 'there',
@@ -125,18 +125,18 @@ export class EmailService {
           email: this.fromEmail,
           name: this.fromName,
         },
-        subject: 'Confirm Your AI Newsletter Subscription 📧',
+        subject: 'Confirm Your YourAIbrief Subscription 📧',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #2563eb; margin: 0;">🤖 AI Newsletter</h1>
+              <h1 style="color: #2563eb; margin: 0;">🤖 YourAIbrief</h1>
               <p style="color: #6b7280; margin: 10px 0;">Your Daily AI Intelligence</p>
             </div>
             
             <div style="background: #f8fafc; padding: 30px; border-radius: 10px; margin-bottom: 20px;">
               <h2 style="color: #1f2937; margin: 0 0 20px 0;">Confirm Your Subscription</h2>
               <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
-                Thanks for signing up for our AI Newsletter! To complete your subscription and start receiving 
+                Thanks for signing up for our YourAIbrief! To complete your subscription and start receiving 
                 curated AI news, please confirm your email address by clicking the button below.
               </p>
               
@@ -298,7 +298,7 @@ export class EmailService {
     const curated = await contentCurationService.curateContent();
     const newsletter = {
       id: `scheduled-newsletter-${Date.now()}`,
-      title: 'Your Daily AI Newsletter',
+      title: 'Your Daily YourAIbrief',
       content: { sections: curated.sections, summary: curated.summary, metadata: curated.metadata },
       summary: curated.summary,
       publishedAt: new Date(),

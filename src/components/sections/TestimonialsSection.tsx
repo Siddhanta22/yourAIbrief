@@ -8,7 +8,7 @@ export function TestimonialsSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-neutral-100 mb-4">
-            Why Choose Our AI Newsletter?
+            Why Choose YourAIbrief?
           </h2>
           <p className="text-xl text-neutral-600 dark:text-neutral-400">
             Built for AI professionals who want to stay ahead without the noise

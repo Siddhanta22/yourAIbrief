@@ -171,7 +171,7 @@ export function HeroSection() {
           console.error('Failed to store email in localStorage:', error);
         }
         
-        setFormMessage('Subscription successful! Welcome to AI Newsletter! Check your email for a welcome message.');
+        setFormMessage('Subscription successful! Welcome to YourAIbrief! Check your email for a welcome message.');
         
         // Redirect to success page after a short delay
         setTimeout(() => {
