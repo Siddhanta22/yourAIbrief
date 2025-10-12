@@ -126,19 +126,28 @@ export async function GET(request: NextRequest) {
   let skippedUsers = 0;
   
   try {
-    // Enhanced security check
+    // Check if this is a Vercel cron job or manual trigger
+    const isVercelCron = request.headers.get('user-agent')?.includes('vercel-cron') || 
+                        request.headers.get('x-vercel-cron') === '1' ||
+                        request.nextUrl.searchParams.get('source') === 'vercel-cron';
+    
     const key = request.nextUrl.searchParams.get('key') || request.headers.get('x-cron-secret');
     const expected = process.env.CRON_SECRET;
     
-    if (!expected) {
-      console.error('[Cron] CRON_SECRET not configured');
-      return NextResponse.json({ ok: false, error: 'Cron secret not configured' }, { status: 500 });
+    // Only require secret for manual access, not Vercel cron
+    if (!isVercelCron) {
+      if (!expected) {
+        console.error('[Cron] CRON_SECRET not configured');
+        return NextResponse.json({ ok: false, error: 'Cron secret not configured' }, { status: 500 });
+      }
+      
+      if (key !== expected) {
+        console.error('[Cron] Unauthorized access attempt');
+        return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
+      }
     }
     
-    if (key !== expected) {
-      console.error('[Cron] Unauthorized access attempt');
-      return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
-    }
+    console.log(`[Cron] Request source: ${isVercelCron ? 'Vercel Cron' : 'Manual'}`);
 
     const now = new Date();
     console.log(`[Cron] Starting newsletter delivery at ${now.toISOString()}`);
@@ -162,7 +171,14 @@ export async function GET(request: NextRequest) {
     
     // Log first few users for debugging
     users.slice(0, 3).forEach(user => {
-      console.log(`[Cron] Sample user: ${user.email}, time: ${user.preferredSendTime}, interests: ${user.userInterests.length}`);
+      let userPrefs = {};
+      try {
+        userPrefs = typeof user.preferences === 'string' ? JSON.parse(user.preferences) : user.preferences || {};
+      } catch (e) {
+        userPrefs = {};
+      }
+      const userInterests = userPrefs.interests || [];
+      console.log(`[Cron] Sample user: ${user.email}, time: ${user.preferredSendTime}, interests: ${userInterests.length} (${userInterests.join(', ')})`);
     });
 
     // Enhanced user filtering with detailed logging
@@ -178,16 +194,27 @@ export async function GET(request: NextRequest) {
     for (const user of users) {
       processedUsers++;
       
+      // Parse user preferences to check interests
+      let userPrefs = {};
+      try {
+        userPrefs = typeof user.preferences === 'string' ? JSON.parse(user.preferences) : user.preferences || {};
+      } catch (e) {
+        console.log(`[Cron] Invalid preferences for ${user.email}:`, e);
+      }
+      
+      const userInterests = userPrefs.interests || [];
+      const hasInterests = userInterests.length > 0 || user.userInterests.length > 0;
+      
       // Check email verification (for existing users, treat as verified if they have interests)
-      const isVerified = user.emailVerified || user.userInterests.length > 0;
+      const isVerified = user.emailVerified || hasInterests;
       if (!isVerified) {
         skippedReasons.notVerified++;
-        console.log(`[Cron] Skipping ${user.email}: not verified`);
+        console.log(`[Cron] Skipping ${user.email}: not verified (no interests or email verification)`);
         continue;
       }
 
       // Check if user has interests
-      if (!user.userInterests || user.userInterests.length === 0) {
+      if (!hasInterests) {
         skippedReasons.noInterests++;
         console.log(`[Cron] Skipping ${user.email}: no interests set`);
         continue;

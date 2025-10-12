@@ -73,8 +73,17 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if user would be due now
-    const isVerified = user.emailVerified || user.userInterests.length > 0;
-    const hasInterests = user.userInterests && user.userInterests.length > 0;
+    // Parse user preferences to check interests
+    let userPrefs = {};
+    try {
+      userPrefs = typeof user.preferences === 'string' ? JSON.parse(user.preferences) : user.preferences || {};
+    } catch (e) {
+      userPrefs = {};
+    }
+    
+    const userInterests = userPrefs.interests || [];
+    const hasInterests = userInterests.length > 0 || user.userInterests.length > 0;
+    const isVerified = user.emailVerified || hasInterests;
     const frequency = (preferences as any).frequency || 'daily';
 
     // Check if already received today
