@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
             // Send welcome email
             try {
               const emailService = new SimpleEmailService();
-              await emailService.sendWelcomeEmail(user.email, user.name);
+              await emailService.sendWelcomeEmail(user.email, user.name || undefined);
               console.log('Welcome email sent to:', user.email);
             } catch (emailError) {
               console.error('Failed to send welcome email:', emailError);
@@ -107,6 +107,86 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: false,
       message: 'Error processing subscription',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, { 
+      status: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      }
+    });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { email, reason } = await request.json();
+    
+    if (!email || !email.includes('@')) {
+      return NextResponse.json({
+        success: false,
+        message: 'Valid email is required'
+      }, { 
+        status: 400,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        }
+      });
+    }
+
+    // Find and deactivate the user
+    const user = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (!user) {
+      return NextResponse.json({
+        success: false,
+        message: 'User not found'
+      }, { 
+        status: 404,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        }
+      });
+    }
+
+    // Deactivate the user
+    await prisma.user.update({
+      where: { email },
+      data: { isActive: false }
+    });
+
+    // Log the unsubscribe reason
+    await prisma.userAnalytics.create({
+      data: {
+        userId: user.id,
+        eventType: 'unsubscribe',
+        eventData: { reason: reason || 'No reason provided' }
+      }
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Successfully unsubscribed'
+    }, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      }
+    });
+
+  } catch (error) {
+    console.error('Unsubscribe error:', error);
+    return NextResponse.json({
+      success: false,
+      message: 'Failed to unsubscribe',
       error: error instanceof Error ? error.message : 'Unknown error'
     }, { 
       status: 500,

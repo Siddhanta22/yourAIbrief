@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 
 export default function SignInPage() {
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/member";
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-100 dark:from-neutral-900 dark:via-neutral-800 dark:to-neutral-900">
