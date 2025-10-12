@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { EmailService } from '@/lib/email-service';
+import { SimpleEmailService } from '@/lib/simple-email';
 
 export async function GET(request: NextRequest) {
   return NextResponse.json({ 
@@ -76,19 +76,19 @@ export async function POST(request: NextRequest) {
     
     console.log('User created:', user.id);
     
-    // Send confirmation email
-    try {
-      const emailService = new EmailService();
-      await emailService.sendConfirmationEmail(user.email, user.id);
-      console.log('Confirmation email sent to:', user.email);
-    } catch (emailError) {
-      console.error('Failed to send confirmation email:', emailError);
-      // Don't fail the subscription if email fails
-    }
+            // Send welcome email
+            try {
+              const emailService = new SimpleEmailService();
+              await emailService.sendWelcomeEmail(user.email, user.name);
+              console.log('Welcome email sent to:', user.email);
+            } catch (emailError) {
+              console.error('Failed to send welcome email:', emailError);
+              // Don't fail the subscription if email fails
+            }
     
     return NextResponse.json({
       success: true,
-      message: 'Subscription successful! Please check your email to confirm your subscription.',
+      message: 'Subscription successful! Welcome to AI Newsletter! Check your email for a welcome message.',
       user: {
         id: user.id,
         email: user.email,

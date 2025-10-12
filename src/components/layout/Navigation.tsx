@@ -28,6 +28,7 @@ export function Navigation() {
   const [mounted, setMounted] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
   const [localEmail, setLocalEmail] = useState<string | null>(null);
+  const [userData, setUserData] = useState<any>(null);
   const [openAccount, setOpenAccount] = useState(false);
   const [showPrefs, setShowPrefs] = useState(false);
   const [prefData, setPrefData] = useState<{ frequency?: string; preferredSendTime?: string; topics?: string[] }>({});
@@ -36,9 +37,56 @@ export function Navigation() {
   useEffect(() => setMounted(true), []);
   useEffect(() => {
     try {
-      setLocalEmail(localStorage.getItem('subscribedEmail'));
-    } catch {}
+      const storedEmail = localStorage.getItem('subscribedEmail');
+      const storedUserData = localStorage.getItem('userData');
+      
+      setLocalEmail(storedEmail);
+      
+      if (storedUserData) {
+        const parsed = JSON.parse(storedUserData);
+        console.log('Navigation: User is logged in via email-first auth', parsed);
+        setUserData(parsed);
+      } else if (storedEmail) {
+        // User has email but no userData, check if they exist
+        console.log('Navigation: Found email, checking if user exists:', storedEmail);
+        checkExistingUser(storedEmail);
+      } else {
+        setUserData(null);
+        console.log('Navigation: No user data found, clearing state');
+      }
+    } catch (error) {
+      console.error('Navigation: Error reading localStorage:', error);
+      setUserData(null);
+    }
   }, []);
+
+  const checkExistingUser = async (email: string) => {
+    try {
+      const response = await fetch('/api/auth/check-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      
+      const data = await response.json();
+      console.log('Navigation: Check existing user response:', data);
+      
+      if (data.success && data.userExists) {
+        // User exists, store their data
+        localStorage.setItem('userData', JSON.stringify(data.user));
+        setUserData(data.user);
+        console.log('Navigation: Existing user found');
+      } else {
+        // User doesn't exist, clear email
+        localStorage.removeItem('subscribedEmail');
+        setUserData(null);
+        console.log('Navigation: User not found, clearing state');
+      }
+    } catch (error) {
+      console.error('Navigation: Error checking existing user:', error);
+      setUserData(null);
+    }
+  };
 
   // Click outside handler for account menu
   useEffect(() => {
@@ -58,40 +106,39 @@ export function Navigation() {
   }, [openAccount]);
 
   const handleLogout = async () => {
-    console.log('=== LOGOUT FUNCTION CALLED ===');
-    console.log('Logout clicked, status:', status, 'localEmail:', localEmail);
+    console.log('Logout clicked');
     setOpenAccount(false);
     
-    // Clear localStorage for email-first auth
     try {
-      localStorage.removeItem('subscribedEmail');
-      console.log('Cleared localStorage, current value:', localStorage.getItem('subscribedEmail'));
-    } catch (error) {
-      console.error('Error clearing localStorage:', error);
-    }
-    
-    // Clear local state immediately
-    setLocalEmail(null);
-    console.log('Set localEmail to null');
-    
-    // Handle NextAuth logout if authenticated
-    if (status === 'authenticated') {
-      console.log('Signing out with NextAuth');
-      try {
-        await signOut({ 
-          callbackUrl: '/',
-          redirect: false // Don't let NextAuth handle redirect, we'll do it manually
-        });
-        console.log('NextAuth signOut completed, now redirecting...');
-      } catch (error) {
-        console.error('NextAuth signOut error:', error);
+      // Clear all data
+      localStorage.clear();
+      setLocalEmail(null);
+      setUserData(null);
+      
+      // Clear cookies
+      document.cookie.split(";").forEach(function(c) { 
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+      });
+      
+      // Call logout API
+      await fetch('/api/auth/logout', { method: 'POST' });
+      
+      // NextAuth logout
+      if (status === 'authenticated') {
+        await signOut({ redirect: false });
       }
+      
+      // Redirect to home
+      window.location.href = '/?show=signup';
+    } catch (error) {
+      console.error('Logout error:', error);
+      window.location.href = '/?show=signup';
     }
-    
-    // Always force a complete page reload to clear all state
-    console.log('About to redirect to /');
-    window.location.href = '/';
   };
+
+  // Check if user is logged in (either via NextAuth or email-first auth)
+  const isLoggedIn = (status === 'authenticated' && session?.user) || (userData && userData.id && userData.email);
+  console.log('Navigation isLoggedIn:', isLoggedIn, 'status:', status, 'session:', !!session, 'userData:', userData);
 
   const navigation = [
     { name: 'Home', href: '/' },
@@ -148,7 +195,7 @@ export function Navigation() {
             <div className="hidden md:flex items-center space-x-2">
               {status === 'loading' ? (
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
-              ) : status === 'authenticated' ? (
+              ) : isLoggedIn ? (
                 <div className="relative" ref={accountMenuRef}>
                   <button
                     onClick={() => setOpenAccount(v => !v)}
@@ -158,10 +205,10 @@ export function Navigation() {
                   </button>
                   {openAccount && (
                     <div className="absolute right-0 mt-2 w-60 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-lg p-2 z-50">
-                      <div className="px-2 py-2 text-xs text-neutral-500 truncate">{session?.user?.email || localEmail}</div>
+                      <div className="px-2 py-2 text-xs text-neutral-500 truncate">{session?.user?.email || userData?.email || localEmail}</div>
                       <button
                         onClick={async () => {
-                          const email = session?.user?.email || localEmail!;
+                          const email = session?.user?.email || userData?.email || localEmail!;
                           try {
                             const res = await fetch(`/api/user/preferences?email=${encodeURIComponent(email)}`);
                             const data = await res.json();
@@ -227,7 +274,7 @@ export function Navigation() {
                   <div className="flex items-center justify-center py-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600"></div>
                   </div>
-                ) : status === 'authenticated' ? (
+                ) : isLoggedIn ? (
                   <>
                     <button
                       onClick={() => { setIsOpen(false); handleLogout(); }}

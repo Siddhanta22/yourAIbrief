@@ -46,38 +46,38 @@ export function SubscriptionForm({ onSubmit, isSubmitting = false }: Subscriptio
     if (!email || !email.includes('@')) return;
     
     try {
-      const res = await fetch(`/api/user/exists?email=${encodeURIComponent(email)}`);
-      const data = await res.json();
-      
-      console.log('Email check response:', data); // Debug log
-      
-      if (data?.exists) {
-        if (data?.emailVerified) {
-          // User exists and is verified - redirect to member page
-          console.log('User verified, redirecting to member page'); // Debug log
-          try {
-            localStorage.setItem('subscribedEmail', email);
-          } catch {}
-          window.location.href = '/member';
-          return;
-        } else {
-          // User exists but not verified - show message and send new confirmation
-          console.log('User exists but not verified'); // Debug log
-          alert('Please check your email for a confirmation link. If you didn\'t receive it, we\'ll send a new one.');
-          // Continue to subscription flow to send new confirmation (without name field)
-          setIsNewUser(false);
-          setShowInterests(true);
-          return;
-        }
+      console.log('Checking if email exists:', email);
+      const checkResponse = await fetch('/api/auth/check-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const checkData = await checkResponse.json();
+      console.log('Email check response:', checkData);
+
+      if (checkData.success && checkData.userExists) {
+        // User exists - redirect to dashboard immediately
+        console.log('User exists, redirecting to dashboard');
+        localStorage.setItem('userData', JSON.stringify(checkData.user));
+        localStorage.setItem('subscribedEmail', email);
+        
+        // Show welcome back message and redirect
+        alert('Welcome back! Redirecting to your dashboard...');
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 1500);
+        return;
       }
       
       // New user - continue to interests selection
-      console.log('New user, showing interests'); // Debug log
+      console.log('New user, showing interests');
       setIsNewUser(true);
       setShowInterests(true);
     } catch (error) {
       console.error('Error checking email:', error);
       // On error, assume new user and continue
+      setIsNewUser(true);
       setShowInterests(true);
     }
   };
