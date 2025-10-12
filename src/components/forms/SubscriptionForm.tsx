@@ -100,6 +100,7 @@ export function SubscriptionForm({ onSubmit, isSubmitting = false }: Subscriptio
   const handleFinalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedInterests.length === 0) return;
+    if (isNewUser && (!name || name.trim() === '')) return;
 
     const deliveryPreferences = {
       frequency,
@@ -168,7 +169,7 @@ export function SubscriptionForm({ onSubmit, isSubmitting = false }: Subscriptio
           {isNewUser && (
             <div>
               <label className="block mb-1 font-medium text-neutral-900 dark:text-neutral-100">
-                Your Name (optional)
+                Your Name
               </label>
               <input
                 type="text"
@@ -176,6 +177,7 @@ export function SubscriptionForm({ onSubmit, isSubmitting = false }: Subscriptio
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Enter your name"
                 className="input-field"
+                required
               />
             </div>
           )}
@@ -290,7 +292,7 @@ export function SubscriptionForm({ onSubmit, isSubmitting = false }: Subscriptio
             <button
               type="submit"
               className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={isSubmitting}
+              disabled={isSubmitting || (isNewUser && (!name || name.trim() === ''))}
             >
               {isSubmitting ? (
                 <span className="flex items-center justify-center">

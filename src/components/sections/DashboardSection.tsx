@@ -132,7 +132,7 @@ export function DashboardSection() {
             transition={{ delay: 0.3, duration: 0.8 }}
             className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-gray-100 mb-6"
           >
-            Welcome back, {user.name || 'User'}! 👋
+            Welcome back, {user.name || user.email?.split('@')[0] || 'User'}! 👋
           </motion.h1>
 
           <motion.p

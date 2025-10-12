@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Mail, Clock, Settings, LogOut, TrendingUp, Users, BarChart3 } from 'lucide-react';
+import { User, Mail, Clock, Settings, TrendingUp, Users, BarChart3 } from 'lucide-react';
 
 interface UserData {
   id: string;
@@ -38,26 +38,6 @@ export default function DashboardPage() {
     setLoading(false);
   }, [router]);
 
-  const handleLogout = async () => {
-    try {
-      // Clear all data
-      localStorage.clear();
-      
-      // Clear cookies
-      document.cookie.split(";").forEach(function(c) { 
-        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
-      });
-      
-      // Call logout API
-      await fetch('/api/auth/logout', { method: 'POST' });
-      
-      // Redirect to home
-      router.push('/?show=signup');
-    } catch (error) {
-      console.error('Logout error:', error);
-      router.push('/?show=signup');
-    }
-  };
 
   if (loading) {
     return (
@@ -76,18 +56,11 @@ export default function DashboardPage() {
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-center items-center h-16">
             <div className="flex items-center">
               <Mail className="w-8 h-8 text-blue-600 mr-3" />
               <h1 className="text-xl font-bold text-gray-900">AI Newsletter Dashboard</h1>
             </div>
-            <button
-              onClick={handleLogout}
-              className="flex items-center text-gray-600 hover:text-gray-900"
-            >
-              <LogOut className="w-5 h-5 mr-2" />
-              Logout
-            </button>
           </div>
         </div>
       </header>
@@ -97,7 +70,7 @@ export default function DashboardPage() {
         {/* Welcome Section */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Welcome back, {user.name || 'User'}! 👋
+            Welcome back, {user.name || user.email?.split('@')[0] || 'User'}! 👋
           </h2>
           <p className="text-gray-600">
             Here's your AI intelligence summary and preferences.
