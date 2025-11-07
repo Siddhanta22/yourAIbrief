@@ -1,4 +1,7 @@
 # 🤖 AI Newsletter Platform
+<img width="1512" height="825" alt="Screenshot 2025-11-07 at 3 53 46 PM" src="https://github.com/user-attachments/assets/6ef43728-d4b3-431f-87d7-84db99701312" /><img width="1512" height="826" alt="Screenshot 2025-11-07 at 4 07 32 PM" src="https://github.com/user-attachments/assets/be72b4c4-38a3-4ac2-906c-be1e0377ff5f" /><img width="1512" height="766" alt="Screenshot 2025-11-07 at 4 08 13 PM" src="https://github.com/user-attachments/assets/6d600797-73e5-43cb-abbd-6df2cd48bcee" />
+
+
 
 > **Your Daily AI Intelligence Hub** - A personalized newsletter platform that curates and delivers AI news based on your interests, frequency, and timing preferences.
 
