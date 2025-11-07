@@ -12,21 +12,41 @@ export function NewsletterPreview() {
     const fetchNews = async () => {
       try {
         setLoading(true);
+        setError(null);
         // Always bypass cache so homepage shows fresh cards
-        const response = await fetch('/api/news/preview', { cache: 'no-store' });
+        const response = await fetch('/api/news/preview', { 
+          cache: 'no-store',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+        
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
+        
         const data = await response.json();
         const received: NewsletterArticle[] = data?.articles || [];
+        
         if (!received || received.length === 0) {
           // Ensure we always have preview cards even if API responds with 0
           throw new Error('No articles in response');
         }
-        setArticles(received);
+        
+        // Normalize dates (handle both Date objects and ISO strings)
+        const normalizedArticles = received.map(article => ({
+          ...article,
+          publishedAt: typeof article.publishedAt === 'string' 
+            ? new Date(article.publishedAt) 
+            : article.publishedAt
+        }));
+        
+        setArticles(normalizedArticles);
+        setError(null);
       } catch (err) {
         console.error('Error fetching news preview:', err);
-        setError('Failed to load news preview');
+        // Don't show error to user, just use fallback silently
+        setError(null);
         // Fallback to static content
         setArticles([
           {

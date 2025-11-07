@@ -63,11 +63,18 @@ export async function GET(request: NextRequest) {
         } else if (userAmPm.toUpperCase() === 'AM' && userHour24 === 12) {
           userHour24 = 0;
         }
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+        const timeDifference = Math.abs(currentHour - userHour24);
+        const isTimeMatch = timeDifference === 0 || (timeDifference === 1 && currentMinute < 30);
+        
         timeMatch = {
           original: userTime,
           hour24: userHour24,
-          isMorningTime: userHour24 >= 6 && userHour24 <= 10,
-          currentHour: now.getHours()
+          isTimeMatch: isTimeMatch,
+          currentHour: currentHour,
+          currentMinute: currentMinute,
+          timeDifference: timeDifference
         };
       }
     }
@@ -137,7 +144,7 @@ export async function GET(request: NextRequest) {
           hour: now.getHours(),
           day: now.toLocaleDateString('en-US', { weekday: 'long' })
         },
-        wouldBeDue: isVerified && hasInterests && timeMatch?.isMorningTime,
+        wouldBeDue: isVerified && hasInterests && timeMatch?.isTimeMatch,
         alreadyReceivedToday: !!existingLog,
         existingLogToday: existingLog ? {
           id: existingLog.id,
@@ -153,8 +160,8 @@ export async function GET(request: NextRequest) {
         subject: log.subject
       })),
       cronSchedule: {
-        vercelCron: '0 8 * * * (8 AM UTC daily)',
-        note: 'Cron runs at 8 AM UTC, processes users with morning times (6 AM - 10 AM)'
+        vercelCron: '0 * * * * (Every hour at :00)',
+        note: 'Cron runs every hour, processes users whose preferred time matches current hour (within 1-hour window)'
       }
     }, {
       headers: {

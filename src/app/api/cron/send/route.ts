@@ -59,18 +59,22 @@ function isUserDueNow(user: any, now: Date): { isDue: boolean; reason: string } 
     userHour24 = 0;
   }
 
-  // For Hobby plan: Since we can only run once per day at 8 AM, we'll send to users
-  // whose preferred time is between 6 AM and 10 AM (morning users)
+  // Support 24/7 delivery for any user preference time
   const currentHour = now.getHours();
-  const isMorningTime = userHour24 >= 6 && userHour24 <= 10;
+  const currentMinute = now.getMinutes();
   
-  if (!isMorningTime) {
-    return { isDue: false, reason: `Time outside morning window: preferred=${userTime} (6 AM - 10 AM)` };
+  // Check if current time matches user's preferred time (within a 1-hour window)
+  // This allows the cron to run multiple times per day and catch users at their preferred time
+  const timeDifference = Math.abs(currentHour - userHour24);
+  const isTimeMatch = timeDifference === 0 || (timeDifference === 1 && currentMinute < 30);
+  
+  if (!isTimeMatch) {
+    return { isDue: false, reason: `Time doesn't match: preferred=${userTime} (${userHour24}:00 UTC), current=${currentHour}:${currentMinute.toString().padStart(2, '0')} UTC` };
   }
 
   // Check frequency
   if (frequency === 'daily') {
-    return { isDue: true, reason: 'Daily frequency matched (morning window)' };
+    return { isDue: true, reason: `Daily frequency matched at ${userTime}` };
   }
 
   if (frequency === 'weekly') {
@@ -81,7 +85,7 @@ function isUserDueNow(user: any, now: Date): { isDue: boolean; reason: string } 
       return { isDue: false, reason: `Weekly: current day=${currentDay}, preferred=${desiredDay}` };
     }
     
-    return { isDue: true, reason: 'Weekly frequency matched (morning window)' };
+    return { isDue: true, reason: `Weekly frequency matched on ${currentDay} at ${userTime}` };
   }
 
   if (frequency === 'monthly') {
@@ -92,7 +96,7 @@ function isUserDueNow(user: any, now: Date): { isDue: boolean; reason: string } 
       return { isDue: false, reason: `Monthly: current day=${currentDay}, preferred=${desiredDay}` };
     }
     
-    return { isDue: true, reason: 'Monthly frequency matched (morning window)' };
+    return { isDue: true, reason: `Monthly frequency matched on day ${currentDay} at ${userTime}` };
   }
 
   return { isDue: false, reason: 'Unknown frequency' };

@@ -27,10 +27,18 @@ export function NewsGrid({
     const fetchNews = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/news/preview', { cache: 'no-store' });
+        setError(null);
+        const response = await fetch('/api/news/preview', { 
+          cache: 'no-store',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+        
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
+        
         const data = await response.json();
         const received: NewsletterArticle[] = data?.articles || [];
         
@@ -38,11 +46,21 @@ export function NewsGrid({
           throw new Error('No articles in response');
         }
         
+        // Normalize dates (handle both Date objects and ISO strings)
+        const normalizedArticles = received.map(article => ({
+          ...article,
+          publishedAt: typeof article.publishedAt === 'string' 
+            ? new Date(article.publishedAt) 
+            : article.publishedAt
+        }));
+        
         // Limit to maxCards
-        setArticles(received.slice(0, maxCards));
+        setArticles(normalizedArticles.slice(0, maxCards));
+        setError(null);
       } catch (err) {
         console.error('Error fetching news preview:', err);
-        setError('Failed to load news preview');
+        // Don't show error to user, just use fallback silently
+        setError(null);
         
         // Fallback to static content
         const fallbackArticles: NewsletterArticle[] = [
@@ -99,7 +117,7 @@ export function NewsGrid({
             publishedAt: new Date(),
             tags: ['enterprise', 'adoption', 'survey'],
             relevance: 0.8,
-            category: 'industry'
+            category: 'ai-news'
           },
           {
             id: '6',
