@@ -175,13 +175,13 @@ export async function GET(request: NextRequest) {
     
     // Log first few users for debugging
     users.slice(0, 3).forEach(user => {
-      let userPrefs = {};
+      let userPrefs: Record<string, any> = {};
       try {
-        userPrefs = typeof user.preferences === 'string' ? JSON.parse(user.preferences) : user.preferences || {};
+        userPrefs = typeof user.preferences === 'string' ? JSON.parse(user.preferences) : (user.preferences as Record<string, any>) || {};
       } catch (e) {
         userPrefs = {};
       }
-      const userInterests = userPrefs.interests || [];
+      const userInterests = (userPrefs.interests || []) as string[];
       console.log(`[Cron] Sample user: ${user.email}, time: ${user.preferredSendTime}, interests: ${userInterests.length} (${userInterests.join(', ')})`);
     });
 
@@ -199,14 +199,15 @@ export async function GET(request: NextRequest) {
       processedUsers++;
       
       // Parse user preferences to check interests
-      let userPrefs = {};
+      let userPrefs: Record<string, any> = {};
       try {
-        userPrefs = typeof user.preferences === 'string' ? JSON.parse(user.preferences) : user.preferences || {};
+        userPrefs = typeof user.preferences === 'string' ? JSON.parse(user.preferences) : (user.preferences as Record<string, any>) || {};
       } catch (e) {
         console.log(`[Cron] Invalid preferences for ${user.email}:`, e);
+        userPrefs = {};
       }
       
-      const userInterests = userPrefs.interests || [];
+      const userInterests = (userPrefs.interests || []) as string[];
       const hasInterests = userInterests.length > 0 || user.userInterests.length > 0;
       
       // Check email verification (for existing users, treat as verified if they have interests)
