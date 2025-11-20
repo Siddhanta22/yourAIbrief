@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { SimpleEmailService } from '@/lib/simple-email';
+
+export const dynamic = 'force-dynamic';
 
 const contactSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -13,24 +16,24 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { name, email, subject, message } = contactSchema.parse(body);
 
-    // Log the contact form submission (for now)
-    console.log('Contact form submission:', {
-      name,
+    // Send email notifications
+    const emailService = new SimpleEmailService();
+    const emailSent = await emailService.sendContactFormNotification(
       email,
+      name,
       subject,
-      message,
-      timestamp: new Date().toISOString(),
-    });
+      message
+    );
 
-    // TODO: Integrate with your preferred service:
-    // Option 1: SendGrid (for email notifications)
-    // Option 2: Formspree (easy form handling)
-    // Option 3: Netlify Forms (if using Netlify)
-    // Option 4: Your own email service
+    if (!emailSent && process.env.NODE_ENV === 'production') {
+      // In production, if email fails, we should log it but still return success to user
+      console.error('[Contact] Failed to send contact form email', {
+        email,
+        subject,
+        timestamp: new Date().toISOString(),
+      });
+    }
 
-    // For now, we'll just return success
-    // In production, you'd send an email notification to yourself
-    
     return NextResponse.json({ 
       success: true, 
       message: 'Thank you for your message! We\'ll get back to you soon.' 
@@ -52,4 +55,15 @@ export async function POST(req: NextRequest) {
       message: 'Failed to send message. Please try again.' 
     }, { status: 500 });
   }
+}
+
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

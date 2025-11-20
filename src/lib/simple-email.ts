@@ -151,4 +151,80 @@ export class SimpleEmailService {
       return false;
     }
   }
+
+  public async sendContactFormNotification(
+    contactEmail: string,
+    contactName: string,
+    subject: string,
+    message: string
+  ): Promise<boolean> {
+    const config = this.validateConfiguration();
+    if (!config.valid) {
+      console.error(`[SimpleEmailService] Failed to send contact form notification: ${config.error}`);
+      return false;
+    }
+
+    // Send notification to admin (from email)
+    const adminMsg = {
+      to: this.fromEmail,
+      from: {
+        email: this.fromEmail,
+        name: this.fromName,
+      },
+      replyTo: contactEmail,
+      subject: `Contact Form: ${subject}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #1f2937; margin: 0 0 20px 0;">New Contact Form Submission</h2>
+          <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <p><strong>From:</strong> ${contactName} (${contactEmail})</p>
+            <p><strong>Subject:</strong> ${subject}</p>
+            <p><strong>Message:</strong></p>
+            <div style="background: #ffffff; padding: 15px; border-radius: 6px; margin-top: 10px; white-space: pre-wrap;">${message}</div>
+          </div>
+          <p style="color: #6b7280; font-size: 12px;">You can reply directly to this email to respond to ${contactName}.</p>
+        </div>
+      `,
+    };
+
+    // Send confirmation to user
+    const userMsg = {
+      to: contactEmail,
+      from: {
+        email: this.fromEmail,
+        name: this.fromName,
+      },
+      subject: `Re: ${subject}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2563eb; margin: 0;">🤖 YourAIbrief</h1>
+          </div>
+          <div style="background: #f8fafc; padding: 30px; border-radius: 10px;">
+            <h2 style="color: #1f2937; margin: 0 0 20px 0;">Thank you for contacting us!</h2>
+            <p style="color: #374151; line-height: 1.6;">
+              Hi ${contactName},<br><br>
+              We've received your message and will get back to you as soon as possible.
+            </p>
+            <div style="background: #ffffff; padding: 15px; border-radius: 6px; margin: 20px 0;">
+              <p style="margin: 0; color: #6b7280; font-size: 14px;"><strong>Your message:</strong></p>
+              <p style="margin: 10px 0 0 0; color: #374151; white-space: pre-wrap;">${message}</p>
+            </div>
+          </div>
+        </div>
+      `,
+    };
+
+    try {
+      await Promise.all([
+        sgMail.send(adminMsg),
+        sgMail.send(userMsg),
+      ]);
+      console.log(`[SimpleEmailService] Contact form notification sent for ${contactEmail}`);
+      return true;
+    } catch (error: any) {
+      console.error(`[SimpleEmailService] Error sending contact form notification:`, error.response?.body || error);
+      return false;
+    }
+  }
 }
