@@ -326,15 +326,12 @@ export function HeroSection() {
                   
                   <button
                     onClick={() => {
-                      const email = session?.user?.email || localEmail;
-                      if (email) {
-                        router.push(`/api/user/preferences?email=${encodeURIComponent(email)}`);
-                      }
+                      router.push('/dashboard');
                     }}
                     className="btn-ghost w-full flex items-center justify-center"
                   >
                     <Settings className="w-4 h-4 mr-2" />
-                    Quick Settings
+                    Go to Dashboard
                   </button>
                 </div>
               </div>
