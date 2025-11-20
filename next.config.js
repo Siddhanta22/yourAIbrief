@@ -6,6 +6,16 @@ const nextConfig = {
   // Disable problematic features
   swcMinify: false,
   compress: false,
+  // Disable build traces to prevent stack overflow
+  outputFileTracingExcludes: {
+    '*': [
+      '.github/**/*',
+      'node_modules/**/*',
+      '.git/**/*',
+      '*.md',
+      '*.log',
+    ],
+  },
   // Exclude .github directory from build
   pageExtensions: ['ts', 'tsx', 'js', 'jsx'],
   webpack: (config, { isServer }) => {
