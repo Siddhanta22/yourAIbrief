@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { motion } from 'framer-motion';
 import { Brain, Zap, Target, Shield, Clock, Users } from 'lucide-react';
 
