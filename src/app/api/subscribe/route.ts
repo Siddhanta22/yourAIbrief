@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { SimpleEmailService } from '@/lib/simple-email';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
   return NextResponse.json({ 
