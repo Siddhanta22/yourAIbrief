@@ -14,6 +14,10 @@ const nextConfig = {
       '.git/**/*',
       '*.md',
       '*.log',
+      'build.sh',
+      'Dockerfile',
+      'railway.json',
+      '*.tsbuildinfo',
     ],
   },
   // Exclude .github directory from build

@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "NEXT_SKIP_BUILD_TRACES=1 npm run build",
   "installCommand": "npm ci",
   "framework": "nextjs",
   "functions": {
