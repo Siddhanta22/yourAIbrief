@@ -1,0 +1,28 @@
+name: Hourly Newsletter Delivery
+
+on:
+  schedule:
+    # Run every hour at :00 minutes (e.g., 1:00, 2:00, 3:00, etc.)
+    - cron: '0 * * * *'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  trigger-newsletter:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Newsletter Cron
+        run: |
+          curl -X GET "${{ secrets.VERCEL_URL }}/api/cron/send?key=${{ secrets.CRON_SECRET }}&source=github-actions" \
+            -H "User-Agent: GitHub-Actions" \
+            -H "X-Cron-Source: github-actions"
+        
+      - name: Check Response
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" -X GET "${{ secrets.VERCEL_URL }}/api/cron/send?key=${{ secrets.CRON_SECRET }}&source=github-actions")
+          if [ "$response" -eq 200 ]; then
+            echo "✅ Newsletter cron triggered successfully"
+          else
+            echo "❌ Newsletter cron failed with status: $response"
+            exit 1
+          fi
+

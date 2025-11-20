@@ -130,16 +130,20 @@ export async function GET(request: NextRequest) {
   let skippedUsers = 0;
   
   try {
-    // Check if this is a Vercel cron job or manual trigger
+    // Check if this is a Vercel cron job, GitHub Actions, or manual trigger
     const isVercelCron = request.headers.get('user-agent')?.includes('vercel-cron') || 
                         request.headers.get('x-vercel-cron') === '1' ||
                         request.nextUrl.searchParams.get('source') === 'vercel-cron';
     
+    const isGitHubActions = request.headers.get('user-agent')?.includes('GitHub-Actions') ||
+                           request.headers.get('x-cron-source') === 'github-actions' ||
+                           request.nextUrl.searchParams.get('source') === 'github-actions';
+    
     const key = request.nextUrl.searchParams.get('key') || request.headers.get('x-cron-secret');
     const expected = process.env.CRON_SECRET;
     
-    // Only require secret for manual access, not Vercel cron
-    if (!isVercelCron) {
+    // Only require secret for manual access, not Vercel cron or GitHub Actions
+    if (!isVercelCron && !isGitHubActions) {
       if (!expected) {
         console.error('[Cron] CRON_SECRET not configured');
         return NextResponse.json({ ok: false, error: 'Cron secret not configured' }, { status: 500 });
@@ -151,7 +155,8 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    console.log(`[Cron] Request source: ${isVercelCron ? 'Vercel Cron' : 'Manual'}`);
+    const source = isVercelCron ? 'Vercel Cron' : isGitHubActions ? 'GitHub Actions' : 'Manual';
+    console.log(`[Cron] Request source: ${source}`);
 
     const now = new Date();
     console.log(`[Cron] Starting newsletter delivery at ${now.toISOString()}`);
