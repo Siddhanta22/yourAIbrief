@@ -173,35 +173,34 @@ export function HeroSection() {
       console.log('Response status:', res.status);
       console.log('Response headers:', Object.fromEntries(res.headers.entries()));
       
+      // Read response body once (can only be read once)
+      const responseText = await res.text();
+      
       if (!res.ok) {
-        const errorText = await res.text();
-        console.error('API Error Response:', errorText);
-        setFormMessage(`API Error (${res.status}): ${errorText}`);
+        console.error('API Error Response:', responseText);
+        try {
+          const errorData = JSON.parse(responseText);
+          setFormMessage(errorData.message || `API Error (${res.status}): ${responseText}`);
+        } catch {
+          setFormMessage(`API Error (${res.status}): ${responseText}`);
+        }
         return;
       }
       
       // Check if response has content before parsing JSON
-      const contentType = res.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await res.text();
-        console.error('Non-JSON response:', text);
-        setFormMessage('Server returned invalid response. Please try again.');
+      if (!responseText || responseText.trim() === '') {
+        console.error('Empty response from server');
+        setFormMessage('Server returned empty response. Please try again.');
         return;
       }
       
       // Safely parse JSON response
       let data;
       try {
-        const text = await res.text();
-        if (!text || text.trim() === '') {
-          console.error('Empty response from server');
-          setFormMessage('Server returned empty response. Please try again.');
-          return;
-        }
-        data = JSON.parse(text);
+        data = JSON.parse(responseText);
         console.log('API Response data:', data);
       } catch (parseError) {
-        console.error('JSON parse error:', parseError);
+        console.error('JSON parse error:', parseError, 'Response text:', responseText);
         setFormMessage('Failed to parse server response. Please try again.');
         return;
       }
