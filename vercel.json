@@ -1,5 +1,5 @@
 {
-  "buildCommand": "NEXT_SKIP_BUILD_TRACES=1 npm run build",
+  "buildCommand": "npm run build",
   "installCommand": "npm ci",
   "framework": "nextjs",
   "functions": {
@@ -15,6 +15,7 @@
   ],
   "env": {
     "NODE_ENV": "production",
-    "PRISMA_GENERATE_DATAPROXY": "true"
+    "PRISMA_GENERATE_DATAPROXY": "true",
+    "NEXT_SKIP_BUILD_TRACES": "1"
   }
 } 
