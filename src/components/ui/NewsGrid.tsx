@@ -73,7 +73,8 @@ export function NewsGrid({
             publishedAt: new Date(),
             tags: ['research', 'transformer', 'performance'],
             relevance: 0.9,
-            category: 'research'
+            category: 'research',
+            image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&h=400&fit=crop&q=80'
           },
           {
             id: '2',
@@ -84,7 +85,8 @@ export function NewsGrid({
             publishedAt: new Date(),
             tags: ['multimodal', 'openai', 'understanding'],
             relevance: 0.8,
-            category: 'ai-news'
+            category: 'ai-news',
+            image: 'https://images.unsplash.com/photo-1676299083043-88b7b3e0d5e1?w=800&h=400&fit=crop&q=80'
           },
           {
             id: '3',
@@ -95,7 +97,8 @@ export function NewsGrid({
             publishedAt: new Date(),
             tags: ['healthtech', 'drug-discovery', 'ml'],
             relevance: 0.7,
-            category: 'healthtech'
+            category: 'healthtech',
+            image: 'https://images.unsplash.com/photo-1559757148-5c3507c77635?w=800&h=400&fit=crop&q=80'
           },
           {
             id: '4',
@@ -106,7 +109,8 @@ export function NewsGrid({
             publishedAt: new Date(),
             tags: ['quantum', 'ai-training', 'breakthrough'],
             relevance: 0.6,
-            category: 'research'
+            category: 'research',
+            image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&h=400&fit=crop&q=80'
           },
           {
             id: '5',
@@ -117,7 +121,8 @@ export function NewsGrid({
             publishedAt: new Date(),
             tags: ['enterprise', 'adoption', 'survey'],
             relevance: 0.8,
-            category: 'ai-news'
+            category: 'ai-news',
+            image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&h=400&fit=crop&q=80'
           },
           {
             id: '6',
@@ -128,7 +133,8 @@ export function NewsGrid({
             publishedAt: new Date(),
             tags: ['reasoning', 'human-level', 'neural-networks'],
             relevance: 0.9,
-            category: 'research'
+            category: 'research',
+            image: 'https://images.unsplash.com/photo-1555255707-c07966088b7b?w=800&h=400&fit=crop&q=80'
           }
         ];
         

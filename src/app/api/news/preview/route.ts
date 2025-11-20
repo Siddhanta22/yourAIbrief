@@ -21,14 +21,15 @@ export async function GET(request: NextRequest) {
       throw new Error('No articles available');
     }
     
-    // Normalize dates to ISO strings for JSON serialization
+    // Normalize dates to ISO strings for JSON serialization and ensure image is included
     const normalizedArticles = articles.slice(0, 6).map(article => ({
       ...article,
       publishedAt: article.publishedAt instanceof Date 
         ? article.publishedAt.toISOString() 
         : typeof article.publishedAt === 'string'
         ? article.publishedAt
-        : new Date().toISOString()
+        : new Date().toISOString(),
+      image: (article as any).image || (article as any).urlToImage || undefined
     }));
     
     const response = NextResponse.json({
@@ -59,7 +60,8 @@ export async function GET(request: NextRequest) {
         tags: ['research', 'transformer', 'performance'],
         relevance: 0.9,
         category: 'research',
-        categoryLabel: 'Research'
+        categoryLabel: 'Research',
+        image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&h=400&fit=crop&q=80'
       },
       {
         id: '2',
@@ -71,7 +73,8 @@ export async function GET(request: NextRequest) {
         tags: ['multimodal', 'openai', 'understanding'],
         relevance: 0.8,
         category: 'ai-news',
-        categoryLabel: 'Industry Pulse'
+        categoryLabel: 'Industry Pulse',
+        image: 'https://images.unsplash.com/photo-1676299083043-88b7b3e0d5e1?w=800&h=400&fit=crop&q=80'
       },
       {
         id: '3',
@@ -83,7 +86,8 @@ export async function GET(request: NextRequest) {
         tags: ['healthtech', 'drug-discovery', 'ml'],
         relevance: 0.7,
         category: 'healthtech',
-        categoryLabel: 'HealthTech'
+        categoryLabel: 'HealthTech',
+        image: 'https://images.unsplash.com/photo-1559757148-5c3507c77635?w=800&h=400&fit=crop&q=80'
       },
       {
         id: '4',
@@ -95,7 +99,8 @@ export async function GET(request: NextRequest) {
         tags: ['quantum', 'ai-training', 'breakthrough'],
         relevance: 0.6,
         category: 'research',
-        categoryLabel: 'Research'
+        categoryLabel: 'Research',
+        image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&h=400&fit=crop&q=80'
       },
       {
         id: '5',
@@ -107,7 +112,8 @@ export async function GET(request: NextRequest) {
         tags: ['enterprise', 'adoption', 'survey'],
         relevance: 0.8,
         category: 'ai-news',
-        categoryLabel: 'Industry Pulse'
+        categoryLabel: 'Industry Pulse',
+        image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&h=400&fit=crop&q=80'
       },
       {
         id: '6',
@@ -119,7 +125,8 @@ export async function GET(request: NextRequest) {
         tags: ['reasoning', 'human-level', 'neural-networks'],
         relevance: 0.9,
         category: 'research',
-        categoryLabel: 'Research'
+        categoryLabel: 'Research',
+        image: 'https://images.unsplash.com/photo-1555255707-c07966088b7b?w=800&h=400&fit=crop&q=80'
       }
     ];
     

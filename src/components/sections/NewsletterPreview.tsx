@@ -58,7 +58,8 @@ export function NewsletterPreview() {
             publishedAt: new Date(),
             tags: ['research', 'transformer', 'performance'],
             relevance: 0.9,
-            category: 'research'
+            category: 'research',
+            image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&h=400&fit=crop&q=80'
           },
           {
             id: '2',
@@ -69,7 +70,8 @@ export function NewsletterPreview() {
             publishedAt: new Date(),
             tags: ['multimodal', 'openai', 'understanding'],
             relevance: 0.8,
-            category: 'ai-news'
+            category: 'ai-news',
+            image: 'https://images.unsplash.com/photo-1676299083043-88b7b3e0d5e1?w=800&h=400&fit=crop&q=80'
           },
           {
             id: '3',
@@ -80,7 +82,8 @@ export function NewsletterPreview() {
             publishedAt: new Date(),
             tags: ['healthtech', 'drug-discovery', 'ml'],
             relevance: 0.7,
-            category: 'healthtech'
+            category: 'healthtech',
+            image: 'https://images.unsplash.com/photo-1559757148-5c3507c77635?w=800&h=400&fit=crop&q=80'
           },
           {
             id: '4',
@@ -91,7 +94,8 @@ export function NewsletterPreview() {
             publishedAt: new Date(),
             tags: ['quantum', 'ai-training', 'breakthrough'],
             relevance: 0.6,
-            category: 'research'
+            category: 'research',
+            image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&h=400&fit=crop&q=80'
           }
         ]);
       } finally {
