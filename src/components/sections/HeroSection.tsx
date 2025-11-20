@@ -117,8 +117,28 @@ export function HeroSection() {
         body: JSON.stringify({ email }),
       });
 
-      const checkData = await checkResponse.json();
-      console.log('Email check response:', checkData);
+      if (!checkResponse.ok) {
+        console.error('Check email failed:', checkResponse.status);
+        // Continue with registration if check fails
+      } else {
+        const checkData = await checkResponse.json();
+        console.log('Email check response:', checkData);
+
+        if (checkData.success && checkData.userExists) {
+          // User exists - redirect to dashboard
+          console.log('User exists, redirecting to dashboard');
+          localStorage.setItem('userData', JSON.stringify(checkData.user));
+          localStorage.setItem('subscribedEmail', email);
+          setLocalEmail(email);
+          setFormMessage('Welcome back! Redirecting to your dashboard...');
+          
+          // Redirect to dashboard after a short delay
+          setTimeout(() => {
+            window.location.href = '/dashboard';
+          }, 1500);
+          return;
+        }
+      }
 
       if (checkData.success && checkData.userExists) {
         // User exists - redirect to dashboard

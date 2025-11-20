@@ -53,6 +53,14 @@ export function SubscriptionForm({ onSubmit, isSubmitting = false }: Subscriptio
         body: JSON.stringify({ email }),
       });
 
+      if (!checkResponse.ok) {
+        console.error('Check email failed:', checkResponse.status);
+        // On error, assume new user and continue
+        setIsNewUser(true);
+        setShowInterests(true);
+        return;
+      }
+
       const checkData = await checkResponse.json();
       console.log('Email check response:', checkData);
 
