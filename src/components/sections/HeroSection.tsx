@@ -137,6 +137,27 @@ export function HeroSection() {
 
       // User doesn't exist - proceed with registration
       console.log('New user, proceeding with registration');
+      
+      // Convert time format from "08:00 AM" to "08:00" (24-hour format)
+      let time24 = '08:00';
+      if (deliveryPreferences?.timeOfDay) {
+        const timeStr = deliveryPreferences.timeOfDay;
+        const match = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+        if (match) {
+          let hours = parseInt(match[1]);
+          const minutes = match[2];
+          const ampm = match[3].toUpperCase();
+          
+          if (ampm === 'PM' && hours !== 12) {
+            hours += 12;
+          } else if (ampm === 'AM' && hours === 12) {
+            hours = 0;
+          }
+          
+          time24 = `${hours.toString().padStart(2, '0')}:${minutes}`;
+        }
+      }
+      
       const res = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -144,8 +165,8 @@ export function HeroSection() {
           name,
           email,
           interests,
-          preferredSendTime: deliveryPreferences?.timeOfDay,
-          frequency: deliveryPreferences?.frequency,
+          preferredSendTime: time24,
+          frequency: deliveryPreferences?.frequency || 'daily',
         }),
       });
       
@@ -159,8 +180,31 @@ export function HeroSection() {
         return;
       }
       
-      const data = await res.json();
-      console.log('API Response data:', data);
+      // Check if response has content before parsing JSON
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await res.text();
+        console.error('Non-JSON response:', text);
+        setFormMessage('Server returned invalid response. Please try again.');
+        return;
+      }
+      
+      // Safely parse JSON response
+      let data;
+      try {
+        const text = await res.text();
+        if (!text || text.trim() === '') {
+          console.error('Empty response from server');
+          setFormMessage('Server returned empty response. Please try again.');
+          return;
+        }
+        data = JSON.parse(text);
+        console.log('API Response data:', data);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        setFormMessage('Failed to parse server response. Please try again.');
+        return;
+      }
       
       if (data.success) {
         // Store user data and email in localStorage for email-first auth

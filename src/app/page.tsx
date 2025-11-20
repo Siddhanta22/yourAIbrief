@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { HeroSection } from '@/components/sections/HeroSection';
 import { DashboardSection } from '@/components/sections/DashboardSection';
@@ -10,7 +10,7 @@ import { TestimonialsSection } from '@/components/sections/TestimonialsSection';
 import { NewsGrid } from '@/components/ui/NewsGrid';
 import toast from 'react-hot-toast';
 
-export default function Home() {
+function HomeContent() {
   const searchParams = useSearchParams();
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -115,5 +115,17 @@ export default function Home() {
       <TestimonialsSection />
       <CTASection />
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 } 
