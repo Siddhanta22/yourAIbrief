@@ -6,28 +6,32 @@ const nextConfig = {
   // Disable problematic features
   swcMinify: false,
   compress: false,
-  // Disable build traces to prevent stack overflow
-  outputFileTracingExcludes: {
-    '*': [
-      '.github/**/*',
-      'node_modules/**/*',
-      '.git/**/*',
-      '*.md',
-      '*.log',
-      'build.sh',
-      'Dockerfile',
-      'railway.json',
-      '*.tsbuildinfo',
-    ],
-  },
   // Exclude .github directory from build
   pageExtensions: ['ts', 'tsx', 'js', 'jsx'],
-  webpack: (config, { isServer }) => {
-    // Exclude .github directory from webpack processing
+  webpack: (config, { isServer, webpack }) => {
+    // Exclude .github directory and other problematic paths from webpack processing
     config.watchOptions = {
       ...config.watchOptions,
-      ignored: ['**/.github/**', '**/node_modules/**'],
+      ignored: [
+        '**/.github/**',
+        '**/node_modules/**',
+        '**/.git/**',
+        '**/*.md',
+        '**/*.log',
+        '**/build.sh',
+        '**/Dockerfile',
+        '**/railway.json',
+      ],
     };
+    
+    // Add resolve fallbacks to prevent issues
+    config.resolve = {
+      ...config.resolve,
+      fallback: {
+        ...config.resolve?.fallback,
+      },
+    };
+    
     return config;
   },
   // Ensure API routes work properly

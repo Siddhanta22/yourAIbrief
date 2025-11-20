@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npx prisma generate && next build",
+    "build": "npx prisma generate && SKIP_NEXT_BUILD_TRACES=1 next build",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
