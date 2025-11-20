@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
+  const baseUrl = process.env.NEXTAUTH_URL || request.nextUrl.origin;
+  
   try {
     const { searchParams } = new URL(request.url);
     const token = searchParams.get('token');
-
+    
     if (!token) {
-      return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/?error=invalid-token`);
+      return NextResponse.redirect(`${baseUrl}/?error=invalid-token`);
     }
 
     // Find and validate the verification token
@@ -16,7 +20,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!verificationToken) {
-      return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/?error=invalid-token`);
+      return NextResponse.redirect(`${baseUrl}/?error=invalid-token`);
     }
 
     if (verificationToken.expires < new Date()) {
@@ -24,7 +28,7 @@ export async function GET(request: NextRequest) {
       await prisma.verificationToken.delete({
         where: { token },
       });
-      return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/?error=expired-token`);
+      return NextResponse.redirect(`${baseUrl}/?error=expired-token`);
     }
 
     // Find the user by email
@@ -34,7 +38,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/?error=user-not-found`);
+      return NextResponse.redirect(`${baseUrl}/?error=user-not-found`);
     }
 
     // Mark user as verified
@@ -71,10 +75,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Redirect to success page
-    return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/?success=email-confirmed`);
+    return NextResponse.redirect(`${baseUrl}/?success=email-confirmed`);
 
   } catch (error) {
     console.error('Email confirmation error:', error);
-    return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/?error=confirmation-failed`);
+    return NextResponse.redirect(`${baseUrl}/?error=confirmation-failed`);
   }
 }

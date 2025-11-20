@@ -81,14 +81,14 @@ export async function GET(request: NextRequest) {
 
     // Check if user would be due now
     // Parse user preferences to check interests
-    let userPrefs = {};
+    let userPrefs: Record<string, any> = {};
     try {
-      userPrefs = typeof user.preferences === 'string' ? JSON.parse(user.preferences) : user.preferences || {};
+      userPrefs = typeof user.preferences === 'string' ? JSON.parse(user.preferences) : (user.preferences as Record<string, any>) || {};
     } catch (e) {
       userPrefs = {};
     }
     
-    const userInterests = userPrefs.interests || [];
+    const userInterests = (userPrefs.interests || []) as string[];
     const hasInterests = userInterests.length > 0 || user.userInterests.length > 0;
     const isVerified = user.emailVerified || hasInterests;
     const frequency = (preferences as any).frequency || 'daily';

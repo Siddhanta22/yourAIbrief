@@ -15,6 +15,18 @@ export class SimpleEmailService {
     }
   }
 
+  private validateConfiguration(): { valid: boolean; error?: string } {
+    if (!this.apiKey) {
+      return { valid: false, error: 'SendGrid API key not configured' };
+    }
+    
+    if (!this.fromEmail || !this.fromName) {
+      return { valid: false, error: 'From email or name not configured' };
+    }
+    
+    return { valid: true };
+  }
+
   async sendWelcomeEmail(email: string, name?: string): Promise<boolean> {
     try {
       if (!this.apiKey) {

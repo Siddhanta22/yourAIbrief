@@ -219,7 +219,8 @@ export async function POST(request: NextRequest) {
         } as any;
 
         const result = await emailSvc.sendNewsletter(
-          {
+          newsletter,
+          [{
             id: user.id,
             email: user.email,
             name: user.name || undefined,
@@ -229,8 +230,7 @@ export async function POST(request: NextRequest) {
             createdAt: user.createdAt,
             updatedAt: user.updatedAt,
             preferredSendTime: user.preferredSendTime || undefined,
-          } as any,
-          newsletter
+          } as any]
         );
 
         if (result.success > 0) {
@@ -239,7 +239,7 @@ export async function POST(request: NextRequest) {
           console.log(`[Manual Cron] Successfully sent to ${user.email}`);
         } else {
           failed++;
-          results.push({ email: user.email, status: 'failed', error: result.error });
+          results.push({ email: user.email, status: 'failed', error: 'Failed to send newsletter' });
           console.log(`[Manual Cron] Failed to send to ${user.email}`);
         }
 
