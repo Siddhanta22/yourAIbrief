@@ -163,12 +163,16 @@ export function HeroSection() {
       console.log('API Response data:', data);
       
       if (data.success) {
-        // Store email in localStorage for email-first auth
+        // Store user data and email in localStorage for email-first auth
         try {
+          if (data.user) {
+            localStorage.setItem('userData', JSON.stringify(data.user));
+            console.log('Stored userData in localStorage:', data.user);
+          }
           localStorage.setItem('subscribedEmail', email);
           console.log('Stored email in localStorage:', email);
         } catch (error) {
-          console.error('Failed to store email in localStorage:', error);
+          console.error('Failed to store data in localStorage:', error);
         }
         
         setFormMessage('Subscription successful! Welcome to YourAIbrief! Check your email for a welcome message.');
