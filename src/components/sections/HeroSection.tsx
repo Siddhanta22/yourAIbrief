@@ -140,21 +140,6 @@ export function HeroSection() {
         }
       }
 
-      if (checkData.success && checkData.userExists) {
-        // User exists - redirect to dashboard
-        console.log('User exists, redirecting to dashboard');
-        localStorage.setItem('userData', JSON.stringify(checkData.user));
-        localStorage.setItem('subscribedEmail', email);
-        setLocalEmail(email);
-        setFormMessage('Welcome back! Redirecting to your dashboard...');
-        
-        // Redirect to dashboard after a short delay
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 1500);
-        return;
-      }
-
       // User doesn't exist - proceed with registration
       console.log('New user, proceeding with registration');
       
