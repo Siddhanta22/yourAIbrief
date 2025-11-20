@@ -6,6 +6,16 @@ const nextConfig = {
   // Disable problematic features
   swcMinify: false,
   compress: false,
+  // Exclude .github directory from build
+  pageExtensions: ['ts', 'tsx', 'js', 'jsx'],
+  webpack: (config, { isServer }) => {
+    // Exclude .github directory from webpack processing
+    config.watchOptions = {
+      ...config.watchOptions,
+      ignored: ['**/.github/**', '**/node_modules/**'],
+    };
+    return config;
+  },
   // Ensure API routes work properly
   async headers() {
     return [
