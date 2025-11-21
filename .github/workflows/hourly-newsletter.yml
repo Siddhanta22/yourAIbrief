@@ -57,32 +57,41 @@ jobs:
           
           # Make the request with redirect following and capture both response code and body
           # -L flag follows redirects, -s is silent, -o writes output, -w writes http_code
-          # Use -f to fail on HTTP errors but we'll handle them manually
           FULL_URL="${VERCEL_URL}/api/cron/send?${QUERY}"
           echo "🌐 Full URL: ${FULL_URL%%\?*}" # Show URL without query params for security
           
+          # Run curl and capture exit code separately
+          set +e  # Don't exit on error
           HTTP_CODE=$(curl -L -s -o /tmp/response.txt -w "%{http_code}" \
             -X GET \
             "${FULL_URL}" \
             -H "User-Agent: GitHub-Actions" \
             -H "X-Cron-Source: github-actions" \
             --max-time 60 \
-            --fail-with-body 2>&1) || CURL_EXIT=$?
+            2>&1)
+          CURL_EXIT=$?
+          set -e  # Re-enable exit on error
           
           # Check if curl command itself failed
-          if [ -n "${CURL_EXIT}" ] && [ "${CURL_EXIT}" -ne 0 ]; then
+          if [ "${CURL_EXIT}" -ne 0 ]; then
             echo "❌ curl command failed with exit code: ${CURL_EXIT}"
+            echo "📄 curl output: ${HTTP_CODE}"
             if [ -f /tmp/response.txt ]; then
               echo "📄 Response body:"
               cat /tmp/response.txt
             fi
-            echo "💡 This might indicate a network issue or malformed URL"
+            echo "💡 This might indicate:"
+            echo "   - Network connectivity issue"
+            echo "   - Malformed URL"
+            echo "   - DNS resolution failure"
+            echo "   - SSL/TLS certificate issue"
             exit 1
           fi
           
-          # Ensure HTTP_CODE is set
-          if [ -z "${HTTP_CODE}" ]; then
-            echo "❌ Failed to get HTTP response code"
+          # Ensure HTTP_CODE is set and is numeric
+          if [ -z "${HTTP_CODE}" ] || ! [[ "${HTTP_CODE}" =~ ^[0-9]+$ ]]; then
+            echo "❌ Failed to get valid HTTP response code"
+            echo "📄 curl output: ${HTTP_CODE}"
             if [ -f /tmp/response.txt ]; then
               echo "📄 Response body:"
               cat /tmp/response.txt
