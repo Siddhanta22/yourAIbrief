@@ -10,19 +10,55 @@ jobs:
   trigger-newsletter:
     runs-on: ubuntu-latest
     steps:
+      - name: Check Secrets
+        run: |
+          if [ -z "${{ secrets.VERCEL_URL }}" ]; then
+            echo "❌ Error: VERCEL_URL secret is not set"
+            echo "Please add VERCEL_URL to GitHub Secrets (Settings → Secrets and variables → Actions)"
+            exit 1
+          fi
+          if [ -z "${{ secrets.CRON_SECRET }}" ]; then
+            echo "❌ Error: CRON_SECRET secret is not set"
+            echo "Please add CRON_SECRET to GitHub Secrets (Settings → Secrets and variables → Actions)"
+            exit 1
+          fi
+          echo "✅ Secrets are configured"
+        
       - name: Trigger Newsletter Cron
         run: |
-          curl -X GET "${{ secrets.VERCEL_URL }}/api/cron/send?key=${{ secrets.CRON_SECRET }}&source=github-actions" \
+          VERCEL_URL="${{ secrets.VERCEL_URL }}"
+          CRON_SECRET="${{ secrets.CRON_SECRET }}"
+          
+          # Remove trailing slash if present
+          VERCEL_URL="${VERCEL_URL%/}"
+          
+          echo "🔔 Triggering newsletter cron at: ${VERCEL_URL}/api/cron/send"
+          
+          # Make the request and capture both response code and body
+          HTTP_CODE=$(curl -s -o /tmp/response.txt -w "%{http_code}" \
+            -X GET \
+            "${VERCEL_URL}/api/cron/send?key=${CRON_SECRET}&source=github-actions" \
             -H "User-Agent: GitHub-Actions" \
-            -H "X-Cron-Source: github-actions"
-        
-      - name: Check Response
-        run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" -X GET "${{ secrets.VERCEL_URL }}/api/cron/send?key=${{ secrets.CRON_SECRET }}&source=github-actions")
-          if [ "$response" -eq 200 ]; then
+            -H "X-Cron-Source: github-actions" \
+            --max-time 60)
+          
+          echo "📊 Response code: ${HTTP_CODE}"
+          
+          if [ -f /tmp/response.txt ]; then
+            echo "📄 Response body:"
+            cat /tmp/response.txt
+            echo ""
+          fi
+          
+          if [ "$HTTP_CODE" -eq 200 ]; then
             echo "✅ Newsletter cron triggered successfully"
+            exit 0
+          elif [ "$HTTP_CODE" -eq 0 ]; then
+            echo "❌ Error: Failed to connect to ${VERCEL_URL}"
+            echo "Please verify VERCEL_URL is correct and the site is deployed"
+            exit 1
           else
-            echo "❌ Newsletter cron failed with status: $response"
+            echo "❌ Newsletter cron failed with HTTP status: ${HTTP_CODE}"
             exit 1
           fi
 
