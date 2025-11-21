@@ -12,22 +12,27 @@ jobs:
     steps:
       - name: Check Secrets
         run: |
-          if [ -z "${{ secrets.VERCEL_URL }}" ]; then
-            echo "❌ Error: VERCEL_URL secret is not set"
-            echo "Please add VERCEL_URL to GitHub Secrets (Settings → Secrets and variables → Actions)"
+          # Support both naming conventions
+          VERCEL_URL_VALUE="${{ secrets.VERCEL_URL || secrets.VERCEL }}"
+          CRON_SECRET_VALUE="${{ secrets.CRON_SECRET || secrets.CRON }}"
+          
+          if [ -z "$VERCEL_URL_VALUE" ]; then
+            echo "❌ Error: VERCEL_URL or VERCEL secret is not set"
+            echo "Please add VERCEL_URL (or VERCEL) to GitHub Secrets (Settings → Secrets and variables → Actions)"
             exit 1
           fi
-          if [ -z "${{ secrets.CRON_SECRET }}" ]; then
-            echo "❌ Error: CRON_SECRET secret is not set"
-            echo "Please add CRON_SECRET to GitHub Secrets (Settings → Secrets and variables → Actions)"
+          if [ -z "$CRON_SECRET_VALUE" ]; then
+            echo "❌ Error: CRON_SECRET or CRON secret is not set"
+            echo "Please add CRON_SECRET (or CRON) to GitHub Secrets (Settings → Secrets and variables → Actions)"
             exit 1
           fi
           echo "✅ Secrets are configured"
         
       - name: Trigger Newsletter Cron
         run: |
-          VERCEL_URL="${{ secrets.VERCEL_URL }}"
-          CRON_SECRET="${{ secrets.CRON_SECRET }}"
+          # Support both naming conventions
+          VERCEL_URL="${{ secrets.VERCEL_URL || secrets.VERCEL }}"
+          CRON_SECRET="${{ secrets.CRON_SECRET || secrets.CRON }}"
           
           # Remove trailing slash if present
           VERCEL_URL="${VERCEL_URL%/}"
