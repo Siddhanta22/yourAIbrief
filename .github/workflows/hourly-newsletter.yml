@@ -33,6 +33,7 @@ jobs:
           # Support both naming conventions
           VERCEL_URL="${{ secrets.VERCEL_URL || secrets.VERCEL }}"
           CRON_SECRET="${{ secrets.CRON_SECRET || secrets.CRON }}"
+          VERCEL_BYPASS_TOKEN="${{ secrets.VERCEL_BYPASS_TOKEN || '' }}"
           
           # Remove trailing slash if present
           VERCEL_URL="${VERCEL_URL%/}"
@@ -40,26 +41,57 @@ jobs:
           echo "🔔 Triggering newsletter cron at: ${VERCEL_URL}/api/cron/send"
           echo "🔑 Using CRON secret: ${CRON_SECRET:0:4}**** (first 4 chars shown)"
           
+          # Build query string with bypass token if available
+          QUERY="key=${CRON_SECRET}&source=github-actions"
+          if [ -n "${VERCEL_BYPASS_TOKEN}" ]; then
+            QUERY="${QUERY}&x-vercel-set-bypass-cookie=true&x-vercel-protection-bypass=${VERCEL_BYPASS_TOKEN}"
+            echo "🔓 Using Vercel protection bypass token"
+          else
+            echo "⚠️  No VERCEL_BYPASS_TOKEN found - if you get 401 errors, add bypass token to GitHub Secrets"
+          fi
+          
           # Make the request and capture both response code and body
           HTTP_CODE=$(curl -s -o /tmp/response.txt -w "%{http_code}" \
             -X GET \
-            "${VERCEL_URL}/api/cron/send?key=${CRON_SECRET}&source=github-actions" \
+            "${VERCEL_URL}/api/cron/send?${QUERY}" \
             -H "User-Agent: GitHub-Actions" \
             -H "X-Cron-Source: github-actions" \
-            --max-time 60 \
-            --fail-with-body)
+            --max-time 60)
           
           echo "📊 Response code: ${HTTP_CODE}"
           
           if [ -f /tmp/response.txt ]; then
-            echo "📄 Response body:"
-            cat /tmp/response.txt
-            echo ""
+            # Check if response is HTML (Vercel protection page)
+            if head -1 /tmp/response.txt | grep -q "<!doctype html"; then
+              echo "❌ Got HTML response - Vercel Deployment Protection is blocking the request"
+              echo "📄 Response preview (first 500 chars):"
+              head -c 500 /tmp/response.txt
+              echo ""
+              echo ""
+              echo "💡 Solution: Add VERCEL_BYPASS_TOKEN to GitHub Secrets"
+              echo "   1. Go to Vercel Dashboard → Your Project → Settings → Security"
+              echo "   2. Create a Protection Bypass Token"
+              echo "   3. Add it to GitHub Secrets as VERCEL_BYPASS_TOKEN"
+            else
+              echo "📄 Response body:"
+              cat /tmp/response.txt
+              echo ""
+            fi
           fi
           
           if [ "$HTTP_CODE" -eq 200 ]; then
             echo "✅ Newsletter cron triggered successfully"
             exit 0
+          elif [ "$HTTP_CODE" -eq 401 ]; then
+            echo "❌ Authentication failed (401)"
+            if [ -z "${VERCEL_BYPASS_TOKEN}" ]; then
+              echo "💡 This is likely due to Vercel Deployment Protection"
+              echo "   Add VERCEL_BYPASS_TOKEN to GitHub Secrets to fix this"
+            else
+              echo "💡 Bypass token is set but still getting 401"
+              echo "   Verify the token is correct in Vercel Dashboard"
+            fi
+            exit 1
           elif [ "$HTTP_CODE" -eq 0 ] || [ -z "$HTTP_CODE" ]; then
             echo "❌ Error: Failed to connect to ${VERCEL_URL}"
             echo "Please verify:"

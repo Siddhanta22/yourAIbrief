@@ -10,15 +10,24 @@ Vercel Hobby plan only allows **daily** cron jobs, but we need **hourly** delive
 
 Go to your GitHub repository → Settings → Secrets and variables → Actions → New repository secret
 
-Add these two secrets:
+Add these secrets:
 
-1. **`VERCEL_URL`**
+1. **`VERCEL_URL`** (or `VERCEL`)
    - Value: Your Vercel deployment URL (e.g., `https://your-a-ibrief.vercel.app`)
    - This is your production domain
 
-2. **`CRON_SECRET`**
+2. **`CRON_SECRET`** (or `CRON`)
    - Value: The same `CRON_SECRET` you have in Vercel environment variables
    - Used to authenticate the cron job requests
+
+3. **`VERCEL_BYPASS_TOKEN`** (Required if Deployment Protection is enabled)
+   - Value: Vercel Protection Bypass Token
+   - How to get it:
+     1. Go to Vercel Dashboard → Your Project → Settings → Security
+     2. Scroll to "Deployment Protection"
+     3. Click "Create Bypass Token"
+     4. Copy the token and add it to GitHub Secrets
+   - This allows GitHub Actions to bypass Vercel's authentication page
 
 ### 2. Enable GitHub Actions
 
