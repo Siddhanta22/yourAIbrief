@@ -38,6 +38,7 @@ jobs:
           VERCEL_URL="${VERCEL_URL%/}"
           
           echo "🔔 Triggering newsletter cron at: ${VERCEL_URL}/api/cron/send"
+          echo "🔑 Using CRON secret: ${CRON_SECRET:0:4}**** (first 4 chars shown)"
           
           # Make the request and capture both response code and body
           HTTP_CODE=$(curl -s -o /tmp/response.txt -w "%{http_code}" \
@@ -45,7 +46,8 @@ jobs:
             "${VERCEL_URL}/api/cron/send?key=${CRON_SECRET}&source=github-actions" \
             -H "User-Agent: GitHub-Actions" \
             -H "X-Cron-Source: github-actions" \
-            --max-time 60)
+            --max-time 60 \
+            --fail-with-body)
           
           echo "📊 Response code: ${HTTP_CODE}"
           
@@ -58,12 +60,16 @@ jobs:
           if [ "$HTTP_CODE" -eq 200 ]; then
             echo "✅ Newsletter cron triggered successfully"
             exit 0
-          elif [ "$HTTP_CODE" -eq 0 ]; then
+          elif [ "$HTTP_CODE" -eq 0 ] || [ -z "$HTTP_CODE" ]; then
             echo "❌ Error: Failed to connect to ${VERCEL_URL}"
-            echo "Please verify VERCEL_URL is correct and the site is deployed"
+            echo "Please verify:"
+            echo "  1. VERCEL_URL is correct (should be https://your-domain.vercel.app)"
+            echo "  2. The site is deployed and accessible"
+            echo "  3. There are no network/firewall issues"
             exit 1
           else
             echo "❌ Newsletter cron failed with HTTP status: ${HTTP_CODE}"
+            echo "Check the response body above for error details"
             exit 1
           fi
 
