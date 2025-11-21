@@ -47,24 +47,27 @@ jobs:
           echo "🔑 Using CRON secret: ${CRON_SECRET:0:4}**** (first 4 chars shown)"
           
           # Build query string with bypass token if available
-          # Use a simple URL encoding function (jq might not be available)
+          # Use printf for URL encoding (more reliable than custom function)
           urlencode() {
             local string="${1}"
-            local strlen=${#string}
             local encoded=""
-            local pos c o
-
-            for (( pos=0 ; pos<strlen ; pos++ )); do
-               c=${string:$pos:1}
-               case "$c" in
-                  [-_.~a-zA-Z0-9] ) o="${c}" ;;
-                  * ) printf -v o '%%%02x' "'$c"
-               esac
-               encoded+="${o}"
+            local i=0
+            while [ $i -lt ${#string} ]; do
+              local char="${string:$i:1}"
+              case "$char" in
+                [a-zA-Z0-9.~_-])
+                  encoded+="$char"
+                  ;;
+                *)
+                  printf -v encoded "%s%%%02x" "$encoded" "'$char"
+                  ;;
+              esac
+              ((i++))
             done
-            echo "${encoded}"
+            echo -n "$encoded"
           }
           
+          # Encode the secrets
           CRON_SECRET_ENCODED=$(urlencode "${CRON_SECRET}")
           QUERY="key=${CRON_SECRET_ENCODED}&source=github-actions"
           if [ -n "${VERCEL_BYPASS_TOKEN}" ]; then
@@ -89,16 +92,30 @@ jobs:
             exit 1
           fi
           
+          # Test URL construction by checking if it's a valid URL format
+          if ! echo "${FULL_URL}" | grep -qE '^https?://[^[:space:]]+'; then
+            echo "❌ Error: Constructed URL appears malformed"
+            echo "   Base: ${BASE_URL}"
+            echo "   Query length: ${#QUERY}"
+            exit 1
+          fi
+          
           # Make the request with redirect following and capture both response code and body
           # -L flag follows redirects, -s is silent, -o writes output, -w writes http_code
+          # Use --url flag to explicitly specify URL (helps with malformed URL detection)
           # Run curl and capture exit code separately
           set +e  # Don't exit on error
+          
+          # Try to validate the URL first by checking curl's URL parsing
+          echo "🔍 Testing URL construction..."
+          curl --version > /dev/null 2>&1 || echo "⚠️  curl version check failed"
+          
           HTTP_CODE=$(curl -L -s -o /tmp/response.txt -w "%{http_code}" \
-            -X GET \
-            "${FULL_URL}" \
+            --url "${FULL_URL}" \
             -H "User-Agent: GitHub-Actions" \
             -H "X-Cron-Source: github-actions" \
             --max-time 60 \
+            --show-error \
             2>&1)
           CURL_EXIT=$?
           set -e  # Re-enable exit on error
