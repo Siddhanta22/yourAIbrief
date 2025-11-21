@@ -47,43 +47,10 @@ jobs:
           echo "🔑 Using CRON secret: ${CRON_SECRET:0:4}**** (first 4 chars shown)"
           
           # Build query string with bypass token if available
-          # Use printf for URL encoding (more reliable than custom function)
-          urlencode() {
-            local string="${1}"
-            local encoded=""
-            local i=0
-            while [ $i -lt ${#string} ]; do
-              local char="${string:$i:1}"
-              case "$char" in
-                [a-zA-Z0-9.~_-])
-                  encoded+="$char"
-                  ;;
-                *)
-                  printf -v encoded "%s%%%02x" "$encoded" "'$char"
-                  ;;
-              esac
-              ((i++))
-            done
-            echo -n "$encoded"
-          }
-          
-          # Encode the secrets
-          CRON_SECRET_ENCODED=$(urlencode "${CRON_SECRET}")
-          QUERY="key=${CRON_SECRET_ENCODED}&source=github-actions"
-          if [ -n "${VERCEL_BYPASS_TOKEN}" ]; then
-            BYPASS_TOKEN_ENCODED=$(urlencode "${VERCEL_BYPASS_TOKEN}")
-            QUERY="${QUERY}&x-vercel-set-bypass-cookie=true&x-vercel-protection-bypass=${BYPASS_TOKEN_ENCODED}"
-            echo "🔓 Using Vercel protection bypass token"
-          else
-            echo "⚠️  No VERCEL_BYPASS_TOKEN found - if you get 401 errors, add bypass token to GitHub Secrets"
-          fi
-          
-          # Construct the full URL
+          # Use a simpler approach: pass query params separately to curl
           BASE_URL="${VERCEL_URL}/api/cron/send"
-          FULL_URL="${BASE_URL}?${QUERY}"
           
           echo "🌐 Base URL: ${BASE_URL}"
-          echo "🔗 Query string length: ${#QUERY} characters"
           
           # Validate URL format
           if [[ ! "${BASE_URL}" =~ ^https:// ]]; then
@@ -92,31 +59,36 @@ jobs:
             exit 1
           fi
           
-          # Test URL construction by checking if it's a valid URL format
-          if ! echo "${FULL_URL}" | grep -qE '^https?://[^[:space:]]+'; then
-            echo "❌ Error: Constructed URL appears malformed"
-            echo "   Base: ${BASE_URL}"
-            echo "   Query length: ${#QUERY}"
-            exit 1
+          # Build curl command with query parameters passed as -G (GET) with --data-urlencode
+          # This lets curl handle URL encoding automatically
+          CURL_CMD="curl -L -s -o /tmp/response.txt -w \"%{http_code}\""
+          CURL_CMD="${CURL_CMD} -G"
+          CURL_CMD="${CURL_CMD} --data-urlencode \"key=${CRON_SECRET}\""
+          CURL_CMD="${CURL_CMD} --data-urlencode \"source=github-actions\""
+          
+          if [ -n "${VERCEL_BYPASS_TOKEN}" ]; then
+            CURL_CMD="${CURL_CMD} --data-urlencode \"x-vercel-set-bypass-cookie=true\""
+            CURL_CMD="${CURL_CMD} --data-urlencode \"x-vercel-protection-bypass=${VERCEL_BYPASS_TOKEN}\""
+            echo "🔓 Using Vercel protection bypass token"
+          else
+            echo "⚠️  No VERCEL_BYPASS_TOKEN found - if you get 401 errors, add bypass token to GitHub Secrets"
           fi
           
+          CURL_CMD="${CURL_CMD} -H \"User-Agent: GitHub-Actions\""
+          CURL_CMD="${CURL_CMD} -H \"X-Cron-Source: github-actions\""
+          CURL_CMD="${CURL_CMD} --max-time 60"
+          CURL_CMD="${CURL_CMD} --show-error"
+          CURL_CMD="${CURL_CMD} \"${BASE_URL}\""
+          
+          echo "🔗 Query parameters will be URL-encoded by curl"
+          
           # Make the request with redirect following and capture both response code and body
-          # -L flag follows redirects, -s is silent, -o writes output, -w writes http_code
-          # Use --url flag to explicitly specify URL (helps with malformed URL detection)
-          # Run curl and capture exit code separately
+          # Use -G flag with --data-urlencode to let curl handle URL encoding automatically
+          # This avoids manual URL encoding issues
           set +e  # Don't exit on error
           
-          # Try to validate the URL first by checking curl's URL parsing
-          echo "🔍 Testing URL construction..."
-          curl --version > /dev/null 2>&1 || echo "⚠️  curl version check failed"
-          
-          HTTP_CODE=$(curl -L -s -o /tmp/response.txt -w "%{http_code}" \
-            --url "${FULL_URL}" \
-            -H "User-Agent: GitHub-Actions" \
-            -H "X-Cron-Source: github-actions" \
-            --max-time 60 \
-            --show-error \
-            2>&1)
+          echo "🚀 Executing curl command..."
+          HTTP_CODE=$(eval "${CURL_CMD}" 2>&1)
           CURL_EXIT=$?
           set -e  # Re-enable exit on error
           
