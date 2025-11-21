@@ -57,12 +57,38 @@ jobs:
           
           # Make the request with redirect following and capture both response code and body
           # -L flag follows redirects, -s is silent, -o writes output, -w writes http_code
+          # Use -f to fail on HTTP errors but we'll handle them manually
+          FULL_URL="${VERCEL_URL}/api/cron/send?${QUERY}"
+          echo "🌐 Full URL: ${FULL_URL%%\?*}" # Show URL without query params for security
+          
           HTTP_CODE=$(curl -L -s -o /tmp/response.txt -w "%{http_code}" \
             -X GET \
-            "${VERCEL_URL}/api/cron/send?${QUERY}" \
+            "${FULL_URL}" \
             -H "User-Agent: GitHub-Actions" \
             -H "X-Cron-Source: github-actions" \
-            --max-time 60)
+            --max-time 60 \
+            --fail-with-body 2>&1) || CURL_EXIT=$?
+          
+          # Check if curl command itself failed
+          if [ -n "${CURL_EXIT}" ] && [ "${CURL_EXIT}" -ne 0 ]; then
+            echo "❌ curl command failed with exit code: ${CURL_EXIT}"
+            if [ -f /tmp/response.txt ]; then
+              echo "📄 Response body:"
+              cat /tmp/response.txt
+            fi
+            echo "💡 This might indicate a network issue or malformed URL"
+            exit 1
+          fi
+          
+          # Ensure HTTP_CODE is set
+          if [ -z "${HTTP_CODE}" ]; then
+            echo "❌ Failed to get HTTP response code"
+            if [ -f /tmp/response.txt ]; then
+              echo "📄 Response body:"
+              cat /tmp/response.txt
+            fi
+            exit 1
+          fi
           
           echo "📊 Response code: ${HTTP_CODE}"
           
