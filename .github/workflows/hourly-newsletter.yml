@@ -38,6 +38,11 @@ jobs:
           # Remove trailing slash if present
           VERCEL_URL="${VERCEL_URL%/}"
           
+          # Ensure URL starts with https://
+          if [[ ! "$VERCEL_URL" =~ ^https?:// ]]; then
+            VERCEL_URL="https://${VERCEL_URL}"
+          fi
+          
           echo "🔔 Triggering newsletter cron at: ${VERCEL_URL}/api/cron/send"
           echo "🔑 Using CRON secret: ${CRON_SECRET:0:4}**** (first 4 chars shown)"
           
@@ -50,8 +55,9 @@ jobs:
             echo "⚠️  No VERCEL_BYPASS_TOKEN found - if you get 401 errors, add bypass token to GitHub Secrets"
           fi
           
-          # Make the request and capture both response code and body
-          HTTP_CODE=$(curl -s -o /tmp/response.txt -w "%{http_code}" \
+          # Make the request with redirect following and capture both response code and body
+          # -L flag follows redirects, -s is silent, -o writes output, -w writes http_code
+          HTTP_CODE=$(curl -L -s -o /tmp/response.txt -w "%{http_code}" \
             -X GET \
             "${VERCEL_URL}/api/cron/send?${QUERY}" \
             -H "User-Agent: GitHub-Actions" \
@@ -82,6 +88,13 @@ jobs:
           if [ "$HTTP_CODE" -eq 200 ]; then
             echo "✅ Newsletter cron triggered successfully"
             exit 0
+          elif [ "$HTTP_CODE" -eq 307 ] || [ "$HTTP_CODE" -eq 301 ] || [ "$HTTP_CODE" -eq 302 ]; then
+            echo "❌ Got redirect (${HTTP_CODE}) - URL might be incorrect or missing protocol"
+            echo "💡 Verify VERCEL_URL is correct:"
+            echo "   - Should be: https://your-domain.vercel.app"
+            echo "   - Current: ${VERCEL_URL}"
+            echo "   - Check if the domain is correct and deployment is live"
+            exit 1
           elif [ "$HTTP_CODE" -eq 401 ]; then
             echo "❌ Authentication failed (401)"
             if [ -z "${VERCEL_BYPASS_TOKEN}" ]; then
