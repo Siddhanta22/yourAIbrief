@@ -47,19 +47,50 @@ jobs:
           echo "🔑 Using CRON secret: ${CRON_SECRET:0:4}**** (first 4 chars shown)"
           
           # Build query string with bypass token if available
-          QUERY="key=${CRON_SECRET}&source=github-actions"
+          # Use a simple URL encoding function (jq might not be available)
+          urlencode() {
+            local string="${1}"
+            local strlen=${#string}
+            local encoded=""
+            local pos c o
+
+            for (( pos=0 ; pos<strlen ; pos++ )); do
+               c=${string:$pos:1}
+               case "$c" in
+                  [-_.~a-zA-Z0-9] ) o="${c}" ;;
+                  * ) printf -v o '%%%02x' "'$c"
+               esac
+               encoded+="${o}"
+            done
+            echo "${encoded}"
+          }
+          
+          CRON_SECRET_ENCODED=$(urlencode "${CRON_SECRET}")
+          QUERY="key=${CRON_SECRET_ENCODED}&source=github-actions"
           if [ -n "${VERCEL_BYPASS_TOKEN}" ]; then
-            QUERY="${QUERY}&x-vercel-set-bypass-cookie=true&x-vercel-protection-bypass=${VERCEL_BYPASS_TOKEN}"
+            BYPASS_TOKEN_ENCODED=$(urlencode "${VERCEL_BYPASS_TOKEN}")
+            QUERY="${QUERY}&x-vercel-set-bypass-cookie=true&x-vercel-protection-bypass=${BYPASS_TOKEN_ENCODED}"
             echo "🔓 Using Vercel protection bypass token"
           else
             echo "⚠️  No VERCEL_BYPASS_TOKEN found - if you get 401 errors, add bypass token to GitHub Secrets"
           fi
           
+          # Construct the full URL
+          BASE_URL="${VERCEL_URL}/api/cron/send"
+          FULL_URL="${BASE_URL}?${QUERY}"
+          
+          echo "🌐 Base URL: ${BASE_URL}"
+          echo "🔗 Query string length: ${#QUERY} characters"
+          
+          # Validate URL format
+          if [[ ! "${BASE_URL}" =~ ^https:// ]]; then
+            echo "❌ Error: Invalid URL format - must start with https://"
+            echo "   Current: ${BASE_URL}"
+            exit 1
+          fi
+          
           # Make the request with redirect following and capture both response code and body
           # -L flag follows redirects, -s is silent, -o writes output, -w writes http_code
-          FULL_URL="${VERCEL_URL}/api/cron/send?${QUERY}"
-          echo "🌐 Full URL: ${FULL_URL%%\?*}" # Show URL without query params for security
-          
           # Run curl and capture exit code separately
           set +e  # Don't exit on error
           HTTP_CODE=$(curl -L -s -o /tmp/response.txt -w "%{http_code}" \
