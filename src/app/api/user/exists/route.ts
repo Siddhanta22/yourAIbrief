@@ -48,6 +48,7 @@ export async function GET(request: NextRequest) {
       exists: true,
       name: user.name,
       emailVerified: !!isVerified,
+      isActive: user.isActive,
       preferredSendTime: user.preferredSendTime,
       frequency: userPreferences?.frequency || 'daily',
       interests: user.userInterests.map(ui => ui.category),
