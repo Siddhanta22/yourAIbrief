@@ -54,30 +54,6 @@ export default function AboutPage() {
         showTitle={true}
       />
 
-      {/* Team Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-6">Our Team</h2>
-          <p className="text-lg text-gray-600 mb-8">
-            Our team consists of AI researchers, industry experts, and content curators 
-            who are passionate about making AI knowledge accessible to everyone.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white rounded-lg p-6 shadow-sm">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">AI Researchers</h3>
-              <p className="text-gray-600">PhD-level experts who understand the technical nuances of AI developments.</p>
-            </div>
-            <div className="bg-white rounded-lg p-6 shadow-sm">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Industry Analysts</h3>
-              <p className="text-gray-600">Professionals with deep industry knowledge and market insights.</p>
-            </div>
-            <div className="bg-white rounded-lg p-6 shadow-sm">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Content Curators</h3>
-              <p className="text-gray-600">Specialists who identify and prioritize the most relevant content.</p>
-            </div>
-          </div>
-        </div>
-      </section>
     </main>
   );
 }
