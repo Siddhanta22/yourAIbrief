@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense } from 'react';
-import UnsubscribePage from './page';
+import UnsubscribePage from './unsubscribe-content';
 
 export default function UnsubscribePageWrapper() {
   return (
