@@ -18,11 +18,14 @@ export function HeroSection() {
     const checkLocalEmail = () => {
       try {
         const email = localStorage.getItem('subscribedEmail');
-        // Only log if email changes to reduce console spam
-        if (email !== localEmail) {
-          console.log('HeroSection: Email in localStorage changed:', email);
-        }
-        setLocalEmail(email);
+        // Only update state if email actually changed to avoid unnecessary re-renders
+        setLocalEmail(prevEmail => {
+          if (prevEmail !== email) {
+            console.log('HeroSection: Email in localStorage changed:', email);
+            return email;
+          }
+          return prevEmail;
+        });
       } catch {}
     };
     
@@ -38,7 +41,7 @@ export function HeroSection() {
     return () => {
       window.removeEventListener('storage', checkLocalEmail);
     };
-  }, [localEmail]);
+  }, []); // Empty deps - only run on mount/unmount
 
   // Check for existing user on mount
   useEffect(() => {
