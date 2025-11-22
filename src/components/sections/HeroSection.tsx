@@ -18,7 +18,10 @@ export function HeroSection() {
     const checkLocalEmail = () => {
       try {
         const email = localStorage.getItem('subscribedEmail');
-        console.log('HeroSection checking localStorage:', email);
+        // Only log if email changes to reduce console spam
+        if (email !== localEmail) {
+          console.log('HeroSection: Email in localStorage changed:', email);
+        }
         setLocalEmail(email);
       } catch {}
     };
@@ -29,21 +32,17 @@ export function HeroSection() {
     // Listen for storage changes (when localStorage is cleared from another tab/component)
     window.addEventListener('storage', checkLocalEmail);
     
-    // Also check periodically in case of same-tab changes
-    const interval = setInterval(checkLocalEmail, 1000);
+    // Note: Removed interval - storage event listener handles cross-tab changes
+    // and same-tab changes will trigger re-renders naturally
     
     return () => {
       window.removeEventListener('storage', checkLocalEmail);
-      clearInterval(interval);
     };
-  }, []);
+  }, [localEmail]);
 
   // Check for existing user on mount
   useEffect(() => {
-    console.log('HeroSection: Checking session state on mount');
-    console.log('Current status:', status, 'localEmail:', localEmail);
-    
-    // Check if user exists in database
+    // Only check if user exists in database when we have an email and aren't authenticated
     if (localEmail && status !== 'authenticated') {
       console.log('HeroSection: Found email, checking if user exists:', localEmail);
       checkExistingUser(localEmail);
@@ -95,7 +94,7 @@ export function HeroSection() {
   
   // ALWAYS show signup form in HeroSection - logged-in users should go to dashboard
   const isLoggedIn = false; // FORCE FALSE - HeroSection is only for signup
-  console.log('HeroSection isLoggedIn:', isLoggedIn, 'status:', status, 'localEmail:', localEmail, 'forceShowSignup:', forceShowSignup);
+  // Removed excessive logging - only log when necessary for debugging
 
   const handleSubscribe = async (
     name: string,
