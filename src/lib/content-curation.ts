@@ -227,6 +227,7 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
 
     return { articles: pageArticles, totalResults: approxTotal };
   } catch (e: any) {
+    // Log the error but re-throw it so the caller can handle it properly
     if (e.response) {
       const status = e.response.status;
       const data = e.response.data;
@@ -248,7 +249,8 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
     } else {
       console.error('[NewsAPI] ❌ Failed to fetch news:', e.message || e);
     }
-    return { articles: [], totalResults: 0 };
+    // Re-throw the error so the API route can handle it properly
+    throw e;
   }
 }
 
