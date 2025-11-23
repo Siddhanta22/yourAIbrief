@@ -91,153 +91,182 @@ export function NewsGrid({
         // Don't show error to user, just use fallback silently
         setError(null);
         
-        // Fallback to static content with enough articles for pagination
-        const allFallbackArticles: NewsletterArticle[] = [
-          {
-            id: '1',
-            title: 'New Transformer Architecture Shows 40% Performance Improvement',
-            summary: 'Researchers at Stanford introduce a novel attention mechanism that significantly reduces computational complexity while improving accuracy across multiple benchmarks.',
-            url: '#',
-            source: 'arXiv',
-            publishedAt: new Date(),
-            tags: ['research', 'transformer', 'performance'],
-            relevance: 0.9,
-            category: 'research',
-            image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&h=400&fit=crop&q=80'
-          },
-          {
-            id: '2',
-            title: 'Breakthrough in Multimodal AI Understanding',
-            summary: 'OpenAI\'s latest model demonstrates unprecedented ability to understand and reason across text, images, and audio simultaneously.',
-            url: '#',
-            source: 'OpenAI Blog',
-            publishedAt: new Date(),
-            tags: ['multimodal', 'openai', 'understanding'],
-            relevance: 0.8,
-            category: 'research',
-            image: 'https://images.unsplash.com/photo-1676299083043-88b7b3e0d5e1?w=800&h=400&fit=crop&q=80'
-          },
-          {
-            id: '3',
-            title: 'AI-Powered Drug Discovery Accelerates by 10x',
-            summary: 'New machine learning algorithms are reducing drug discovery timelines from years to months.',
-            url: '#',
-            source: 'Nature',
-            publishedAt: new Date(),
-            tags: ['healthtech', 'drug-discovery', 'ml'],
-            relevance: 0.7,
-            category: 'healthtech',
-            image: 'https://images.unsplash.com/photo-1559757148-5c3507c77635?w=800&h=400&fit=crop&q=80'
-          },
-          {
-            id: '4',
-            title: 'Quantum Computing Breakthrough for AI Training',
-            summary: 'Quantum algorithms could dramatically speed up AI model training and inference.',
-            url: '#',
-            source: 'Science',
-            publishedAt: new Date(),
-            tags: ['quantum', 'ai-training', 'breakthrough'],
-            relevance: 0.6,
-            category: 'research',
-            image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&h=400&fit=crop&q=80'
-          },
-          {
-            id: '5',
-            title: 'Enterprise AI Adoption Reaches 85% in Fortune 500',
-            summary: 'Latest survey shows dramatic increase in AI implementation across major corporations.',
-            url: '#',
-            source: 'TechCrunch',
-            publishedAt: new Date(),
-            tags: ['enterprise', 'adoption', 'survey'],
-            relevance: 0.8,
-            category: 'research',
-            image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&h=400&fit=crop&q=80'
-          },
-          {
-            id: '6',
-            title: 'Neural Networks Achieve Human-Level Reasoning',
-            summary: 'New research demonstrates AI systems matching human performance in complex reasoning tasks.',
-            url: '#',
-            source: 'Nature',
-            publishedAt: new Date(),
-            tags: ['reasoning', 'human-level', 'neural-networks'],
-            relevance: 0.9,
-            category: 'research',
-            image: 'https://images.unsplash.com/photo-1555255707-c07966088b7b?w=800&h=400&fit=crop&q=80'
-          },
-          {
-            id: '7',
-            title: 'GPT-5 Architecture Revealed: 10x More Parameters',
-            summary: 'OpenAI announces next-generation language model with unprecedented scale and capabilities.',
-            url: '#',
-            source: 'TechCrunch',
-            publishedAt: new Date(),
-            tags: ['gpt-5', 'llm', 'announcement'],
-            relevance: 0.95,
-            category: 'research',
-            image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&h=400&fit=crop&q=80'
-          },
-          {
-            id: '8',
-            title: 'AI Breakthrough in Protein Folding Prediction',
-            summary: 'New deep learning model accurately predicts protein structures, accelerating drug development.',
-            url: '#',
-            source: 'Nature',
-            publishedAt: new Date(),
-            tags: ['protein-folding', 'biology', 'deep-learning'],
-            relevance: 0.85,
-            category: 'healthtech',
-            image: 'https://images.unsplash.com/photo-1559757148-5c3507c77635?w=800&h=400&fit=crop&q=80'
-          },
-          {
-            id: '9',
-            title: 'Autonomous Vehicles Reach Level 4 Autonomy',
-            summary: 'Major automaker achieves fully autonomous driving in controlled environments.',
-            url: '#',
-            source: 'The Verge',
-            publishedAt: new Date(),
-            tags: ['autonomous-vehicles', 'transportation', 'ai'],
-            relevance: 0.75,
-            category: 'research',
-            image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&h=400&fit=crop&q=80'
-          },
-          {
-            id: '10',
-            title: 'AI-Powered Climate Modeling Predicts Extreme Weather',
-            summary: 'Machine learning models improve accuracy of climate predictions by 40%.',
-            url: '#',
-            source: 'Science',
-            publishedAt: new Date(),
-            tags: ['climate', 'weather', 'prediction'],
-            relevance: 0.7,
-            category: 'research',
-            image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&h=400&fit=crop&q=80'
-          },
-          {
-            id: '11',
-            title: 'Robotic Surgery Achieves 99% Success Rate',
-            summary: 'AI-assisted surgical robots demonstrate unprecedented precision and outcomes.',
-            url: '#',
-            source: 'Nature Medicine',
-            publishedAt: new Date(),
-            tags: ['robotics', 'surgery', 'healthcare'],
-            relevance: 0.8,
-            category: 'healthtech',
-            image: 'https://images.unsplash.com/photo-1559757148-5c3507c77635?w=800&h=400&fit=crop&q=80'
-          },
-          {
-            id: '12',
-            title: 'Large Language Models Revolutionize Code Generation',
-            summary: 'AI coding assistants now generate production-ready code with minimal human intervention.',
-            url: '#',
-            source: 'IEEE Spectrum',
-            publishedAt: new Date(),
-            tags: ['coding', 'llm', 'software'],
-            relevance: 0.85,
-            category: 'research',
-            image: 'https://images.unsplash.com/photo-1555255707-c07966088b7b?w=800&h=400&fit=crop&q=80'
+        // Generate fallback articles dynamically for endless pages
+        const generateFallbackArticles = (count: number): NewsletterArticle[] => {
+          const baseArticles: NewsletterArticle[] = [
+            {
+              id: '1',
+              title: 'New Transformer Architecture Shows 40% Performance Improvement',
+              summary: 'Researchers at Stanford introduce a novel attention mechanism that significantly reduces computational complexity while improving accuracy across multiple benchmarks.',
+              url: '#',
+              source: 'arXiv',
+              publishedAt: new Date(),
+              tags: ['research', 'transformer', 'performance'],
+              relevance: 0.9,
+              category: 'research',
+              image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&h=400&fit=crop&q=80'
+            },
+            {
+              id: '2',
+              title: 'Breakthrough in Multimodal AI Understanding',
+              summary: 'OpenAI\'s latest model demonstrates unprecedented ability to understand and reason across text, images, and audio simultaneously.',
+              url: '#',
+              source: 'OpenAI Blog',
+              publishedAt: new Date(),
+              tags: ['multimodal', 'openai', 'understanding'],
+              relevance: 0.8,
+              category: 'research',
+              image: 'https://images.unsplash.com/photo-1676299083043-88b7b3e0d5e1?w=800&h=400&fit=crop&q=80'
+            },
+            {
+              id: '3',
+              title: 'AI-Powered Drug Discovery Accelerates by 10x',
+              summary: 'New machine learning algorithms are reducing drug discovery timelines from years to months.',
+              url: '#',
+              source: 'Nature',
+              publishedAt: new Date(),
+              tags: ['healthtech', 'drug-discovery', 'ml'],
+              relevance: 0.7,
+              category: 'healthtech',
+              image: 'https://images.unsplash.com/photo-1559757148-5c3507c77635?w=800&h=400&fit=crop&q=80'
+            },
+            {
+              id: '4',
+              title: 'Quantum Computing Breakthrough for AI Training',
+              summary: 'Quantum algorithms could dramatically speed up AI model training and inference.',
+              url: '#',
+              source: 'Science',
+              publishedAt: new Date(),
+              tags: ['quantum', 'ai-training', 'breakthrough'],
+              relevance: 0.6,
+              category: 'research',
+              image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&h=400&fit=crop&q=80'
+            },
+            {
+              id: '5',
+              title: 'Enterprise AI Adoption Reaches 85% in Fortune 500',
+              summary: 'Latest survey shows dramatic increase in AI implementation across major corporations.',
+              url: '#',
+              source: 'TechCrunch',
+              publishedAt: new Date(),
+              tags: ['enterprise', 'adoption', 'survey'],
+              relevance: 0.8,
+              category: 'research',
+              image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&h=400&fit=crop&q=80'
+            },
+            {
+              id: '6',
+              title: 'Neural Networks Achieve Human-Level Reasoning',
+              summary: 'New research demonstrates AI systems matching human performance in complex reasoning tasks.',
+              url: '#',
+              source: 'Nature',
+              publishedAt: new Date(),
+              tags: ['reasoning', 'human-level', 'neural-networks'],
+              relevance: 0.9,
+              category: 'research',
+              image: 'https://images.unsplash.com/photo-1555255707-c07966088b7b?w=800&h=400&fit=crop&q=80'
+            },
+            {
+              id: '7',
+              title: 'GPT-5 Architecture Revealed: 10x More Parameters',
+              summary: 'OpenAI announces next-generation language model with unprecedented scale and capabilities.',
+              url: '#',
+              source: 'TechCrunch',
+              publishedAt: new Date(),
+              tags: ['gpt-5', 'llm', 'announcement'],
+              relevance: 0.95,
+              category: 'research',
+              image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&h=400&fit=crop&q=80'
+            },
+            {
+              id: '8',
+              title: 'AI Breakthrough in Protein Folding Prediction',
+              summary: 'New deep learning model accurately predicts protein structures, accelerating drug development.',
+              url: '#',
+              source: 'Nature',
+              publishedAt: new Date(),
+              tags: ['protein-folding', 'biology', 'deep-learning'],
+              relevance: 0.85,
+              category: 'healthtech',
+              image: 'https://images.unsplash.com/photo-1559757148-5c3507c77635?w=800&h=400&fit=crop&q=80'
+            },
+            {
+              id: '9',
+              title: 'Autonomous Vehicles Reach Level 4 Autonomy',
+              summary: 'Major automaker achieves fully autonomous driving in controlled environments.',
+              url: '#',
+              source: 'The Verge',
+              publishedAt: new Date(),
+              tags: ['autonomous-vehicles', 'transportation', 'ai'],
+              relevance: 0.75,
+              category: 'research',
+              image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&h=400&fit=crop&q=80'
+            },
+            {
+              id: '10',
+              title: 'AI-Powered Climate Modeling Predicts Extreme Weather',
+              summary: 'Machine learning models improve accuracy of climate predictions by 40%.',
+              url: '#',
+              source: 'Science',
+              publishedAt: new Date(),
+              tags: ['climate', 'weather', 'prediction'],
+              relevance: 0.7,
+              category: 'research',
+              image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&h=400&fit=crop&q=80'
+            },
+            {
+              id: '11',
+              title: 'Robotic Surgery Achieves 99% Success Rate',
+              summary: 'AI-assisted surgical robots demonstrate unprecedented precision and outcomes.',
+              url: '#',
+              source: 'Nature Medicine',
+              publishedAt: new Date(),
+              tags: ['robotics', 'surgery', 'healthcare'],
+              relevance: 0.8,
+              category: 'healthtech',
+              image: 'https://images.unsplash.com/photo-1559757148-5c3507c77635?w=800&h=400&fit=crop&q=80'
+            },
+            {
+              id: '12',
+              title: 'Large Language Models Revolutionize Code Generation',
+              summary: 'AI coding assistants now generate production-ready code with minimal human intervention.',
+              url: '#',
+              source: 'IEEE Spectrum',
+              publishedAt: new Date(),
+              tags: ['coding', 'llm', 'software'],
+              relevance: 0.85,
+              category: 'research',
+              image: 'https://images.unsplash.com/photo-1555255707-c07966088b7b?w=800&h=400&fit=crop&q=80'
+            }
+          ];
+          
+          // Generate more articles by duplicating and varying the base articles
+          const allArticles: NewsletterArticle[] = [];
+          const variations = [
+            'Latest', 'New', 'Revolutionary', 'Breakthrough', 'Advanced', 'Cutting-edge',
+            'Innovative', 'Next-generation', 'State-of-the-art', 'Groundbreaking'
+          ];
+          
+          for (let i = 0; i < count; i++) {
+            const baseIndex = i % baseArticles.length;
+            const base = baseArticles[baseIndex];
+            const variation = variations[i % variations.length];
+            
+            allArticles.push({
+              ...base,
+              id: `${base.id}-${i + 1}`,
+              title: i < baseArticles.length 
+                ? base.title 
+                : `${variation} ${base.title.replace(/^(New|Latest|Revolutionary|Advanced|Cutting-edge|Innovative|Next-generation|State-of-the-art|Groundbreaking)\s+/i, '')}`,
+              publishedAt: new Date(Date.now() - i * 86400000), // Vary dates
+            });
           }
-        ];
+          
+          return allArticles;
+        };
+        
+        // Generate at least 60 articles (10+ pages) for endless pagination
+        const allFallbackArticles = generateFallbackArticles(60);
         
         if (enablePagination) {
           // Paginate fallback articles
