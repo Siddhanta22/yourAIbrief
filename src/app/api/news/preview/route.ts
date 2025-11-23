@@ -19,324 +19,118 @@ export async function GET(request: NextRequest) {
     // Check if NEWS_API_KEY is available
     if (!process.env.NEWS_API_KEY) {
       console.error('❌ NEWS_API_KEY not configured in environment variables');
-      console.error('Please add NEWS_API_KEY to your Vercel environment variables');
-      throw new Error('NEWS_API_KEY not configured');
+      return NextResponse.json({
+        success: false,
+        error: 'NEWS_API_KEY not configured',
+        message: 'Please add NEWS_API_KEY to your Vercel environment variables. See NEWS_API_SETUP.md for instructions.'
+      }, { status: 500 });
     }
 
     console.log(`📰 Fetching real news from NewsAPI - Page ${currentPage}, Size ${pageSize}`);
-    
-    let articles: any[] = [];
-    let totalResults = 0;
     
     try {
       const curationService = new ContentCurationService();
       // Fetch articles for the specific page - this will fetch different articles for each page
       const result = await curationService.fetchContent([], currentPage, pageSize);
-      articles = result.articles || [];
-      totalResults = result.totalResults || 0;
+      const articles = result.articles || [];
+      const totalResults = result.totalResults || 0;
       
-      // If no articles returned, log and use fallback
+      // If no articles returned, return error
       if (!articles || articles.length === 0) {
-        console.warn(`⚠️ No articles returned from NewsAPI for page ${currentPage}`);
-        console.warn('This could mean:');
-        console.warn('1. NEWS_API_KEY is invalid or expired');
-        console.warn('2. NewsAPI rate limit reached');
-        console.warn('3. No articles match the filters');
-        throw new Error('No articles available from NewsAPI');
+        console.error(`❌ No articles returned from NewsAPI for page ${currentPage}`);
+        return NextResponse.json({
+          success: false,
+          error: 'No articles available',
+          message: 'NewsAPI returned no articles. This could mean: 1) API key is invalid/expired, 2) Rate limit reached, 3) No articles match the filters. Check Vercel logs for details.',
+          page: currentPage
+        }, { status: 500 });
       }
       
       console.log(`✅ Successfully fetched ${articles.length} articles from NewsAPI for page ${currentPage}`);
-    } catch (fetchError: any) {
-      console.error('❌ Error fetching from NewsAPI:', fetchError);
-      console.error('Error details:', {
-        message: fetchError?.message,
-        name: fetchError?.name,
-        stack: fetchError?.stack,
-        response: fetchError?.response?.data,
-        status: fetchError?.response?.status
-      });
-      // Set articles to empty to trigger fallback
-      articles = [];
-      totalResults = 0;
-    }
-    
-    // If we successfully got articles, return them
-    if (articles && articles.length > 0) {
       // Normalize dates to ISO strings for JSON serialization and ensure image is included
-    const normalizedArticles = articles.map(article => ({
-      ...article,
-      publishedAt: article.publishedAt instanceof Date 
-        ? article.publishedAt.toISOString() 
-        : typeof article.publishedAt === 'string'
-        ? article.publishedAt
-        : new Date().toISOString(),
-      image: (article as any).image || (article as any).urlToImage || undefined
-    }));
-    
-    // Calculate total pages (assuming we have enough articles)
-    const totalPages = Math.ceil((totalResults || normalizedArticles.length * 3) / pageSize);
-    
-    const response = NextResponse.json({
-      success: true,
-      articles: normalizedArticles,
-      pagination: {
-        currentPage,
-        pageSize,
-        totalPages,
-        totalArticles: totalResults || normalizedArticles.length * 3
-      },
-      timestamp: new Date().toISOString()
-    });
-    
+      const normalizedArticles = articles.map(article => ({
+        ...article,
+        publishedAt: article.publishedAt instanceof Date 
+          ? article.publishedAt.toISOString() 
+          : typeof article.publishedAt === 'string'
+          ? article.publishedAt
+          : new Date().toISOString(),
+        image: (article as any).image || (article as any).urlToImage || undefined
+      }));
+      
+      // Calculate total pages (assuming we have enough articles)
+      const totalPages = Math.ceil((totalResults || normalizedArticles.length * 3) / pageSize);
+      
+      const response = NextResponse.json({
+        success: true,
+        articles: normalizedArticles,
+        pagination: {
+          currentPage,
+          pageSize,
+          totalPages,
+          totalArticles: totalResults || normalizedArticles.length * 3
+        },
+        timestamp: new Date().toISOString()
+      });
+      
       // Add CORS headers
       response.headers.set('Access-Control-Allow-Origin', '*');
       response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
       response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
       
       return response;
-    }
-    
-    // If we get here, no articles were fetched - throw to trigger fallback
-    throw new Error('No articles available from NewsAPI');
-  } catch (error: any) {
-    console.error('❌ News preview error:', error);
-    console.error('Error type:', error?.constructor?.name);
-    console.error('Error message:', error?.message);
-    console.error('Error stack:', error?.stack);
-    
-    if (error?.response) {
-      console.error('API Error Response:', {
-        status: error.response.status,
-        statusText: error.response.statusText,
-        data: error.response.data
-      });
-    }
-    
-    console.error('Falling back to static content - THIS IS NOT REAL NEWS');
-    console.error('To get real news, ensure NEWS_API_KEY is set in Vercel environment variables');
-    
-    // Get pagination parameters from query string
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const pageSize = 6;
-    const currentPage = Math.max(1, page);
-    
-    // Generate fallback articles dynamically for endless pages
-    const generateFallbackArticles = (count: number) => {
-      const now = new Date().toISOString();
-      const baseArticles = [
-      {
-        id: '1',
-        title: 'New Transformer Architecture Shows 40% Performance Improvement',
-        summary: 'Researchers at Stanford introduce a novel attention mechanism that significantly reduces computational complexity while improving accuracy across multiple benchmarks.',
-        url: '#',
-        source: 'arXiv',
-        publishedAt: now,
-        tags: ['research', 'transformer', 'performance'],
-        relevance: 0.9,
-        category: 'research',
-        categoryLabel: 'Research',
-        image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&h=400&fit=crop&q=80'
-      },
-      {
-        id: '2',
-        title: 'Breakthrough in Multimodal AI Understanding',
-        summary: 'OpenAI\'s latest model demonstrates unprecedented ability to understand and reason across text, images, and audio simultaneously.',
-        url: '#',
-        source: 'OpenAI Blog',
-        publishedAt: now,
-        tags: ['multimodal', 'openai', 'understanding'],
-        relevance: 0.8,
-        category: 'research',
-        categoryLabel: 'Research',
-        image: 'https://images.unsplash.com/photo-1676299083043-88b7b3e0d5e1?w=800&h=400&fit=crop&q=80'
-      },
-      {
-        id: '3',
-        title: 'AI-Powered Drug Discovery Accelerates by 10x',
-        summary: 'New machine learning algorithms are revolutionizing pharmaceutical research, reducing drug discovery timelines from years to months.',
-        url: '#',
-        source: 'Nature',
-        publishedAt: now,
-        tags: ['healthtech', 'drug-discovery', 'ml'],
-        relevance: 0.7,
-        category: 'healthtech',
-        categoryLabel: 'HealthTech',
-        image: 'https://images.unsplash.com/photo-1559757148-5c3507c77635?w=800&h=400&fit=crop&q=80'
-      },
-      {
-        id: '4',
-        title: 'Quantum Computing Breakthrough for AI Training',
-        summary: 'Researchers develop quantum algorithms that could dramatically speed up AI model training and inference.',
-        url: '#',
-        source: 'Science',
-        publishedAt: now,
-        tags: ['quantum', 'ai-training', 'breakthrough'],
-        relevance: 0.6,
-        category: 'research',
-        categoryLabel: 'Research',
-        image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&h=400&fit=crop&q=80'
-      },
-      {
-        id: '5',
-        title: 'Enterprise AI Adoption Reaches 85% in Fortune 500',
-        summary: 'Latest survey shows dramatic increase in AI implementation across major corporations, with 85% of Fortune 500 companies now using AI in some capacity.',
-        url: '#',
-        source: 'TechCrunch',
-        publishedAt: now,
-        tags: ['enterprise', 'adoption', 'survey'],
-        relevance: 0.8,
-        category: 'research',
-        categoryLabel: 'Research',
-        image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&h=400&fit=crop&q=80'
-      },
-      {
-        id: '6',
-        title: 'Neural Networks Achieve Human-Level Reasoning',
-        summary: 'New research demonstrates AI systems matching human performance in complex reasoning tasks, marking a significant milestone in AI development.',
-        url: '#',
-        source: 'Nature',
-        publishedAt: now,
-        tags: ['reasoning', 'human-level', 'neural-networks'],
-        relevance: 0.9,
-        category: 'research',
-        categoryLabel: 'Research',
-        image: 'https://images.unsplash.com/photo-1555255707-c07966088b7b?w=800&h=400&fit=crop&q=80'
-      },
-      {
-        id: '7',
-        title: 'GPT-5 Architecture Revealed: 10x More Parameters',
-        summary: 'OpenAI announces next-generation language model with unprecedented scale and capabilities.',
-        url: '#',
-        source: 'TechCrunch',
-        publishedAt: now,
-        tags: ['gpt-5', 'llm', 'announcement'],
-        relevance: 0.95,
-        category: 'research',
-        categoryLabel: 'Research',
-        image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&h=400&fit=crop&q=80'
-      },
-      {
-        id: '8',
-        title: 'AI Breakthrough in Protein Folding Prediction',
-        summary: 'New deep learning model accurately predicts protein structures, accelerating drug development.',
-        url: '#',
-        source: 'Nature',
-        publishedAt: now,
-        tags: ['protein-folding', 'biology', 'deep-learning'],
-        relevance: 0.85,
-        category: 'healthtech',
-        categoryLabel: 'HealthTech',
-        image: 'https://images.unsplash.com/photo-1559757148-5c3507c77635?w=800&h=400&fit=crop&q=80'
-      },
-      {
-        id: '9',
-        title: 'Autonomous Vehicles Reach Level 4 Autonomy',
-        summary: 'Major automaker achieves fully autonomous driving in controlled environments.',
-        url: '#',
-        source: 'The Verge',
-        publishedAt: now,
-        tags: ['autonomous-vehicles', 'transportation', 'ai'],
-        relevance: 0.75,
-        category: 'research',
-        categoryLabel: 'Research',
-        image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&h=400&fit=crop&q=80'
-      },
-      {
-        id: '10',
-        title: 'AI-Powered Climate Modeling Predicts Extreme Weather',
-        summary: 'Machine learning models improve accuracy of climate predictions by 40%.',
-        url: '#',
-        source: 'Science',
-        publishedAt: now,
-        tags: ['climate', 'weather', 'prediction'],
-        relevance: 0.7,
-        category: 'research',
-        categoryLabel: 'Research',
-        image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&h=400&fit=crop&q=80'
-      },
-      {
-        id: '11',
-        title: 'Robotic Surgery Achieves 99% Success Rate',
-        summary: 'AI-assisted surgical robots demonstrate unprecedented precision and outcomes.',
-        url: '#',
-        source: 'Nature Medicine',
-        publishedAt: now,
-        tags: ['robotics', 'surgery', 'healthcare'],
-        relevance: 0.8,
-        category: 'healthtech',
-        categoryLabel: 'HealthTech',
-        image: 'https://images.unsplash.com/photo-1559757148-5c3507c77635?w=800&h=400&fit=crop&q=80'
-      },
-      {
-        id: '12',
-        title: 'Large Language Models Revolutionize Code Generation',
-        summary: 'AI coding assistants now generate production-ready code with minimal human intervention.',
-        url: '#',
-        source: 'IEEE Spectrum',
-        publishedAt: now,
-        tags: ['coding', 'llm', 'software'],
-        relevance: 0.85,
-        category: 'research',
-        categoryLabel: 'Research',
-        image: 'https://images.unsplash.com/photo-1555255707-c07966088b7b?w=800&h=400&fit=crop&q=80'
-      }
-      ];
+    } catch (error: any) {
+      console.error('❌ News preview error:', error);
+      console.error('Error type:', error?.constructor?.name);
+      console.error('Error message:', error?.message);
+      console.error('Error stack:', error?.stack);
       
-      // Generate more articles by duplicating and varying the base articles
-      const allArticles = [];
-      const variations = [
-        'Latest', 'New', 'Revolutionary', 'Breakthrough', 'Advanced', 'Cutting-edge',
-        'Innovative', 'Next-generation', 'State-of-the-art', 'Groundbreaking'
-      ];
-      
-      for (let i = 0; i < count; i++) {
-        const baseIndex = i % baseArticles.length;
-        const base = baseArticles[baseIndex];
-        const variation = variations[i % variations.length];
+      // Handle axios errors from NewsAPI
+      if (error?.response) {
+        const status = error.response.status;
+        const data = error.response.data;
         
-        allArticles.push({
-          ...base,
-          id: `${base.id}-${i + 1}`,
-          title: i < baseArticles.length 
-            ? base.title 
-            : `${variation} ${base.title.replace(/^(New|Latest|Revolutionary|Advanced|Cutting-edge|Innovative|Next-generation|State-of-the-art|Groundbreaking)\s+/i, '')}`,
-          publishedAt: new Date(Date.now() - i * 86400000).toISOString(), // Vary dates
+        console.error('NewsAPI Error Response:', {
+          status: status,
+          statusText: error.response.statusText,
+          data: data
         });
+        
+        let errorMessage = 'Failed to fetch news from NewsAPI';
+        if (status === 401) {
+          errorMessage = 'NewsAPI authentication failed - API key is invalid or expired';
+        } else if (status === 429) {
+          errorMessage = 'NewsAPI rate limit exceeded - Too many requests';
+        } else if (status === 400) {
+          errorMessage = 'NewsAPI bad request - Invalid query parameters';
+        }
+        
+        return NextResponse.json({
+          success: false,
+          error: errorMessage,
+          details: data,
+          status: status,
+          message: 'Please check your NEWS_API_KEY in Vercel environment variables and ensure it is valid. See NEWS_API_SETUP.md for instructions.'
+        }, { status: 500 });
       }
       
-      return allArticles;
-    };
-    
-    // Generate at least 60 articles (10+ pages) for endless pagination
-    const allFallbackArticles = generateFallbackArticles(60);
-    
-    // Paginate fallback articles
-    const startIndex = (currentPage - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    const paginatedArticles = allFallbackArticles.slice(startIndex, endIndex);
-    const totalPages = Math.ceil(allFallbackArticles.length / pageSize);
-    
-    const response = NextResponse.json({
-      success: true,
-      articles: paginatedArticles,
-      pagination: {
-        currentPage,
-        pageSize,
-        totalPages,
-        totalArticles: allFallbackArticles.length
-      },
-      timestamp: new Date().toISOString(),
-      note: '⚠️ Using fallback static content - NOT real news. Please configure NEWS_API_KEY in Vercel environment variables to get real, up-to-date news. See NEWS_API_SETUP.md for instructions.',
-      isFallback: true
-    });
-    
-    // Add CORS headers
-    response.headers.set('Access-Control-Allow-Origin', '*');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    
-    return response;
+      // Handle other errors
+      return NextResponse.json({
+        success: false,
+        error: 'Failed to fetch news',
+        message: error?.message || 'Unknown error occurred while fetching news',
+        details: 'Check Vercel logs for more information'
+      }, { status: 500 });
+    }
+  } catch (outerError: any) {
+    // Catch any unexpected errors
+    console.error('❌ Unexpected error in news preview:', outerError);
+    return NextResponse.json({
+      success: false,
+      error: 'Unexpected error',
+      message: outerError?.message || 'An unexpected error occurred',
+      details: 'Check Vercel logs for more information'
+    }, { status: 500 });
   }
 }
 

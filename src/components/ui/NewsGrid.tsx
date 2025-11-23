@@ -50,14 +50,21 @@ export function NewsGrid({
         });
         
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
         }
         
         const data = await response.json();
+        
+        // Check if API returned an error
+        if (!data.success) {
+          throw new Error(data.message || data.error || 'Failed to fetch news');
+        }
+        
         const received: NewsletterArticle[] = data?.articles || [];
         
         if (!received || received.length === 0) {
-          throw new Error('No articles in response');
+          throw new Error(data.message || 'No articles in response');
         }
         
         // Normalize dates (handle both Date objects and ISO strings)
@@ -86,201 +93,11 @@ export function NewsGrid({
         }
         
         setError(null);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error fetching news preview:', err);
-        // Don't show error to user, just use fallback silently
-        setError(null);
-        
-        // Generate fallback articles dynamically for endless pages
-        const generateFallbackArticles = (count: number): NewsletterArticle[] => {
-          const baseArticles: NewsletterArticle[] = [
-            {
-              id: '1',
-              title: 'New Transformer Architecture Shows 40% Performance Improvement',
-              summary: 'Researchers at Stanford introduce a novel attention mechanism that significantly reduces computational complexity while improving accuracy across multiple benchmarks.',
-              url: '#',
-              source: 'arXiv',
-              publishedAt: new Date(),
-              tags: ['research', 'transformer', 'performance'],
-              relevance: 0.9,
-              category: 'research',
-              image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&h=400&fit=crop&q=80'
-            },
-            {
-              id: '2',
-              title: 'Breakthrough in Multimodal AI Understanding',
-              summary: 'OpenAI\'s latest model demonstrates unprecedented ability to understand and reason across text, images, and audio simultaneously.',
-              url: '#',
-              source: 'OpenAI Blog',
-              publishedAt: new Date(),
-              tags: ['multimodal', 'openai', 'understanding'],
-              relevance: 0.8,
-              category: 'research',
-              image: 'https://images.unsplash.com/photo-1676299083043-88b7b3e0d5e1?w=800&h=400&fit=crop&q=80'
-            },
-            {
-              id: '3',
-              title: 'AI-Powered Drug Discovery Accelerates by 10x',
-              summary: 'New machine learning algorithms are reducing drug discovery timelines from years to months.',
-              url: '#',
-              source: 'Nature',
-              publishedAt: new Date(),
-              tags: ['healthtech', 'drug-discovery', 'ml'],
-              relevance: 0.7,
-              category: 'healthtech',
-              image: 'https://images.unsplash.com/photo-1559757148-5c3507c77635?w=800&h=400&fit=crop&q=80'
-            },
-            {
-              id: '4',
-              title: 'Quantum Computing Breakthrough for AI Training',
-              summary: 'Quantum algorithms could dramatically speed up AI model training and inference.',
-              url: '#',
-              source: 'Science',
-              publishedAt: new Date(),
-              tags: ['quantum', 'ai-training', 'breakthrough'],
-              relevance: 0.6,
-              category: 'research',
-              image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&h=400&fit=crop&q=80'
-            },
-            {
-              id: '5',
-              title: 'Enterprise AI Adoption Reaches 85% in Fortune 500',
-              summary: 'Latest survey shows dramatic increase in AI implementation across major corporations.',
-              url: '#',
-              source: 'TechCrunch',
-              publishedAt: new Date(),
-              tags: ['enterprise', 'adoption', 'survey'],
-              relevance: 0.8,
-              category: 'research',
-              image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&h=400&fit=crop&q=80'
-            },
-            {
-              id: '6',
-              title: 'Neural Networks Achieve Human-Level Reasoning',
-              summary: 'New research demonstrates AI systems matching human performance in complex reasoning tasks.',
-              url: '#',
-              source: 'Nature',
-              publishedAt: new Date(),
-              tags: ['reasoning', 'human-level', 'neural-networks'],
-              relevance: 0.9,
-              category: 'research',
-              image: 'https://images.unsplash.com/photo-1555255707-c07966088b7b?w=800&h=400&fit=crop&q=80'
-            },
-            {
-              id: '7',
-              title: 'GPT-5 Architecture Revealed: 10x More Parameters',
-              summary: 'OpenAI announces next-generation language model with unprecedented scale and capabilities.',
-              url: '#',
-              source: 'TechCrunch',
-              publishedAt: new Date(),
-              tags: ['gpt-5', 'llm', 'announcement'],
-              relevance: 0.95,
-              category: 'research',
-              image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&h=400&fit=crop&q=80'
-            },
-            {
-              id: '8',
-              title: 'AI Breakthrough in Protein Folding Prediction',
-              summary: 'New deep learning model accurately predicts protein structures, accelerating drug development.',
-              url: '#',
-              source: 'Nature',
-              publishedAt: new Date(),
-              tags: ['protein-folding', 'biology', 'deep-learning'],
-              relevance: 0.85,
-              category: 'healthtech',
-              image: 'https://images.unsplash.com/photo-1559757148-5c3507c77635?w=800&h=400&fit=crop&q=80'
-            },
-            {
-              id: '9',
-              title: 'Autonomous Vehicles Reach Level 4 Autonomy',
-              summary: 'Major automaker achieves fully autonomous driving in controlled environments.',
-              url: '#',
-              source: 'The Verge',
-              publishedAt: new Date(),
-              tags: ['autonomous-vehicles', 'transportation', 'ai'],
-              relevance: 0.75,
-              category: 'research',
-              image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&h=400&fit=crop&q=80'
-            },
-            {
-              id: '10',
-              title: 'AI-Powered Climate Modeling Predicts Extreme Weather',
-              summary: 'Machine learning models improve accuracy of climate predictions by 40%.',
-              url: '#',
-              source: 'Science',
-              publishedAt: new Date(),
-              tags: ['climate', 'weather', 'prediction'],
-              relevance: 0.7,
-              category: 'research',
-              image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&h=400&fit=crop&q=80'
-            },
-            {
-              id: '11',
-              title: 'Robotic Surgery Achieves 99% Success Rate',
-              summary: 'AI-assisted surgical robots demonstrate unprecedented precision and outcomes.',
-              url: '#',
-              source: 'Nature Medicine',
-              publishedAt: new Date(),
-              tags: ['robotics', 'surgery', 'healthcare'],
-              relevance: 0.8,
-              category: 'healthtech',
-              image: 'https://images.unsplash.com/photo-1559757148-5c3507c77635?w=800&h=400&fit=crop&q=80'
-            },
-            {
-              id: '12',
-              title: 'Large Language Models Revolutionize Code Generation',
-              summary: 'AI coding assistants now generate production-ready code with minimal human intervention.',
-              url: '#',
-              source: 'IEEE Spectrum',
-              publishedAt: new Date(),
-              tags: ['coding', 'llm', 'software'],
-              relevance: 0.85,
-              category: 'research',
-              image: 'https://images.unsplash.com/photo-1555255707-c07966088b7b?w=800&h=400&fit=crop&q=80'
-            }
-          ];
-          
-          // Generate more articles by duplicating and varying the base articles
-          const allArticles: NewsletterArticle[] = [];
-          const variations = [
-            'Latest', 'New', 'Revolutionary', 'Breakthrough', 'Advanced', 'Cutting-edge',
-            'Innovative', 'Next-generation', 'State-of-the-art', 'Groundbreaking'
-          ];
-          
-          for (let i = 0; i < count; i++) {
-            const baseIndex = i % baseArticles.length;
-            const base = baseArticles[baseIndex];
-            const variation = variations[i % variations.length];
-            
-            allArticles.push({
-              ...base,
-              id: `${base.id}-${i + 1}`,
-              title: i < baseArticles.length 
-                ? base.title 
-                : `${variation} ${base.title.replace(/^(New|Latest|Revolutionary|Advanced|Cutting-edge|Innovative|Next-generation|State-of-the-art|Groundbreaking)\s+/i, '')}`,
-              publishedAt: new Date(Date.now() - i * 86400000), // Vary dates
-            });
-          }
-          
-          return allArticles;
-        };
-        
-        // Generate at least 60 articles (10+ pages) for endless pagination
-        const allFallbackArticles = generateFallbackArticles(60);
-        
-        if (enablePagination) {
-          // Paginate fallback articles
-          const startIndex = (currentPage - 1) * CARDS_PER_PAGE;
-          const endIndex = startIndex + CARDS_PER_PAGE;
-          const paginatedArticles = allFallbackArticles.slice(startIndex, endIndex);
-          const totalPagesCount = Math.ceil(allFallbackArticles.length / CARDS_PER_PAGE);
-          
-          setArticles(paginatedArticles);
-          setTotalPages(totalPagesCount);
-          setTotalArticles(allFallbackArticles.length);
-        } else {
-          setArticles(allFallbackArticles.slice(0, maxCards));
-        }
+        const errorMessage = err?.message || 'Failed to fetch news. Please check that NEWS_API_KEY is configured correctly in Vercel.';
+        setError(errorMessage);
+        setArticles([]);
       } finally {
         setLoading(false);
       }
@@ -335,9 +152,24 @@ export function NewsGrid({
                 </div>
               ))}
             </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 max-w-2xl mx-auto">
+                <h3 className="text-lg font-semibold text-red-800 dark:text-red-200 mb-2">
+                  Failed to Load News
+                </h3>
+                <p className="text-red-700 dark:text-red-300 mb-4">
+                  {error}
+                </p>
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  Please ensure NEWS_API_KEY is properly configured in Vercel environment variables. 
+                  See NEWS_API_SETUP.md for instructions.
+                </p>
+              </div>
+            </div>
           ) : articles.length === 0 ? (
-            <div className="text-center text-neutral-600 dark:text-neutral-400">
-              <p>No preview articles available right now. Please check back later.</p>
+            <div className="text-center text-neutral-600 dark:text-neutral-400 py-12">
+              <p>No articles available right now. Please check back later.</p>
             </div>
           ) : (
             <>
