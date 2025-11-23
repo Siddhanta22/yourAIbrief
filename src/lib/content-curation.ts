@@ -245,6 +245,7 @@ export interface CuratedContent {
 
 export class ContentCurationService {
   async fetchContent(userInterests: string[] = [], page: number = 1, pageSize: number = 12): Promise<{ articles: NewsletterArticle[], totalResults: number }> {
+    console.log(`[ContentCuration] fetchContent called - page: ${page}, pageSize: ${pageSize}, interests:`, userInterests);
     const newsApiArticles = await fetchNewsFromNewsAPI(userInterests, page, pageSize);
     const relevantArticles = userInterests.length > 0
       ? newsApiArticles.articles.filter(article => 

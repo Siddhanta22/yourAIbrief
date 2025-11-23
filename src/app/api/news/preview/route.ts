@@ -18,19 +18,27 @@ export async function GET(request: NextRequest) {
     
     // Check if NEWS_API_KEY is available
     if (!process.env.NEWS_API_KEY) {
-      console.log('NEWS_API_KEY not available, using fallback content');
+      console.error('❌ NEWS_API_KEY not configured in environment variables');
+      console.error('Please add NEWS_API_KEY to your Vercel environment variables');
       throw new Error('NEWS_API_KEY not configured');
     }
 
+    console.log(`📰 Fetching real news from NewsAPI - Page ${currentPage}, Size ${pageSize}`);
     const curationService = new ContentCurationService();
-    // Fetch more articles to support pagination (fetch enough for multiple pages)
+    // Fetch articles for the specific page - this will fetch different articles for each page
     const { articles, totalResults } = await curationService.fetchContent([], currentPage, pageSize);
     
-    // If no articles returned, use fallback
+    // If no articles returned, log and use fallback
     if (!articles || articles.length === 0) {
-      console.log('No articles returned from curation service, using fallback');
-      throw new Error('No articles available');
+      console.warn(`⚠️ No articles returned from NewsAPI for page ${currentPage}`);
+      console.warn('This could mean:');
+      console.warn('1. NEWS_API_KEY is invalid or expired');
+      console.warn('2. NewsAPI rate limit reached');
+      console.warn('3. No articles match the filters');
+      throw new Error('No articles available from NewsAPI');
     }
+    
+    console.log(`✅ Successfully fetched ${articles.length} articles from NewsAPI for page ${currentPage}`);
     
     // Normalize dates to ISO strings for JSON serialization and ensure image is included
     const normalizedArticles = articles.map(article => ({
@@ -65,7 +73,9 @@ export async function GET(request: NextRequest) {
     
     return response;
   } catch (error) {
-    console.error('News preview error:', error);
+    console.error('❌ News preview error:', error);
+    console.error('Falling back to static content - THIS IS NOT REAL NEWS');
+    console.error('To get real news, ensure NEWS_API_KEY is set in Vercel environment variables');
     
     // Get pagination parameters from query string
     const { searchParams } = new URL(request.url);
@@ -279,7 +289,8 @@ export async function GET(request: NextRequest) {
         totalArticles: allFallbackArticles.length
       },
       timestamp: new Date().toISOString(),
-      note: 'Using fallback content due to API error'
+      note: '⚠️ Using fallback static content - NOT real news. Please configure NEWS_API_KEY in Vercel environment variables to get real, up-to-date news. See NEWS_API_SETUP.md for instructions.',
+      isFallback: true
     });
     
     // Add CORS headers
