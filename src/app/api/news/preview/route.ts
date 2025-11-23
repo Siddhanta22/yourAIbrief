@@ -50,14 +50,19 @@ export async function GET(request: NextRequest) {
       console.error('❌ Error fetching from NewsAPI:', fetchError);
       console.error('Error details:', {
         message: fetchError?.message,
+        name: fetchError?.name,
         stack: fetchError?.stack,
-        response: fetchError?.response?.data
+        response: fetchError?.response?.data,
+        status: fetchError?.response?.status
       });
-      // Re-throw to trigger fallback
-      throw fetchError;
+      // Set articles to empty to trigger fallback
+      articles = [];
+      totalResults = 0;
     }
     
-    // Normalize dates to ISO strings for JSON serialization and ensure image is included
+    // If we successfully got articles, return them
+    if (articles && articles.length > 0) {
+      // Normalize dates to ISO strings for JSON serialization and ensure image is included
     const normalizedArticles = articles.map(article => ({
       ...article,
       publishedAt: article.publishedAt instanceof Date 
@@ -83,12 +88,16 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString()
     });
     
-    // Add CORS headers
-    response.headers.set('Access-Control-Allow-Origin', '*');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      // Add CORS headers
+      response.headers.set('Access-Control-Allow-Origin', '*');
+      response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      
+      return response;
+    }
     
-    return response;
+    // If we get here, no articles were fetched - throw to trigger fallback
+    throw new Error('No articles available from NewsAPI');
   } catch (error: any) {
     console.error('❌ News preview error:', error);
     console.error('Error type:', error?.constructor?.name);
