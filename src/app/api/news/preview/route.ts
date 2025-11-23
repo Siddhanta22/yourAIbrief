@@ -75,6 +75,7 @@ export async function GET(request: NextRequest) {
     
     // Generate fallback articles dynamically for endless pages
     const generateFallbackArticles = (count: number) => {
+      const now = new Date().toISOString();
       const baseArticles = [
       {
         id: '1',
@@ -277,7 +278,7 @@ export async function GET(request: NextRequest) {
         totalPages,
         totalArticles: allFallbackArticles.length
       },
-      timestamp: now,
+      timestamp: new Date().toISOString(),
       note: 'Using fallback content due to API error'
     });
     
