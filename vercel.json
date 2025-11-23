@@ -2,12 +2,6 @@
   "buildCommand": "bash build.sh",
   "installCommand": "npm ci",
   "framework": "nextjs",
-  "functions": {
-    "src/app/api/**/*.ts": {
-      "maxDuration": 30,
-      "memory": 1024
-    }
-  },
   "crons": [
     {
       "path": "/api/cron/send",
@@ -18,11 +12,5 @@
     "NODE_ENV": "production",
     "PRISMA_GENERATE_DATAPROXY": "true",
     "NEXT_SKIP_BUILD_TRACES": "1"
-  },
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "/api/:path*"
-    }
-  ]
+  }
 } 
