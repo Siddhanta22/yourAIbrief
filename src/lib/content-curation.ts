@@ -142,7 +142,7 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
 
     while (filtered.length < page * pageSize && rawPage <= MAX_RAW_PAGES && !reachedEnd) {
       const params = buildParams(rawPage);
-      console.log('[NewsAPI] Request params:', params);
+      console.log('[NewsAPI] Request params:', { ...params, apiKey: '***' }); // Hide API key in logs
       const res = await axios.get(NEWS_API_URL, { params });
       console.log(`[NewsAPI] Response status: ${res.status}`);
       console.log(`[NewsAPI] Total results from API: ${res.data?.totalResults || 0}`);
@@ -153,11 +153,15 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
         reachedEnd = true;
       }
 
-      const pageFiltered = raw
-        .filter((a: any) => a.urlToImage && typeof a.urlToImage === 'string' && a.urlToImage.trim() !== '')
-        .filter((a: any) => !SOURCE_BLOCKLIST.some(blocked => (a.source?.name || '').toLowerCase().includes(blocked.toLowerCase())))
-        .filter((a: any) => !KEYWORD_BLOCKLIST.some(rx => rx.test(`${a.title} ${a.description || ''}`)))
-        .filter((a: any) => isAIArticle(a))
+      // Log filtering stats
+      const withImages = raw.filter((a: any) => a.urlToImage && typeof a.urlToImage === 'string' && a.urlToImage.trim() !== '');
+      const afterSourceFilter = withImages.filter((a: any) => !SOURCE_BLOCKLIST.some(blocked => (a.source?.name || '').toLowerCase().includes(blocked.toLowerCase())));
+      const afterKeywordFilter = afterSourceFilter.filter((a: any) => !KEYWORD_BLOCKLIST.some(rx => rx.test(`${a.title} ${a.description || ''}`)));
+      const afterAIFilter = afterKeywordFilter.filter((a: any) => isAIArticle(a));
+      
+      console.log(`[NewsAPI] Filtering stats for page ${rawPage}: ${raw.length} raw -> ${withImages.length} with images -> ${afterSourceFilter.length} after source filter -> ${afterKeywordFilter.length} after keyword filter -> ${afterAIFilter.length} after AI filter`);
+
+      const pageFiltered = afterAIFilter
         .map((a: any) => {
           const category = categorizeArticle(a);
           return {
