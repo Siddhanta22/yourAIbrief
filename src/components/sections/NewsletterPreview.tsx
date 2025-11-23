@@ -160,16 +160,16 @@ export function NewsletterPreview() {
   return (
     <section className="py-20 bg-neutral-50 dark:bg-neutral-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-8 sm:mb-12">
-          <h2 className="text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-neutral-100 mb-4">
+        <div className="text-center mb-6 sm:mb-8 md:mb-12 px-4">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-neutral-900 dark:text-neutral-100 mb-2 sm:mb-4">
             See What You'll Get
           </h2>
-          <p className="text-xl text-neutral-600 dark:text-neutral-400">
+          <p className="text-base sm:text-lg md:text-xl text-neutral-600 dark:text-neutral-400">
             A preview of our curated AI newsletter format
           </p>
         </div>
         
-        <div className="card max-w-6xl mx-auto p-6 sm:p-8">
+        <div className="card max-w-6xl mx-auto p-4 sm:p-6 md:p-8">
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {[...Array(6)].map((_, i) => (
