@@ -111,6 +111,7 @@ function HomeContent() {
         subtitle="A preview of our curated AI newsletter format"
         maxCards={6}
         showTitle={true}
+        enablePagination={true}
       />
       <TestimonialsSection />
       <CTASection />
