@@ -73,9 +73,9 @@ export async function GET(request: NextRequest) {
     const pageSize = 6;
     const currentPage = Math.max(1, page);
     
-    // Return fallback static articles if API fails
-    const now = new Date().toISOString();
-    const allFallbackArticles = [
+    // Generate fallback articles dynamically for endless pages
+    const generateFallbackArticles = (count: number) => {
+      const baseArticles = [
       {
         id: '1',
         title: 'New Transformer Architecture Shows 40% Performance Improvement',
@@ -232,7 +232,35 @@ export async function GET(request: NextRequest) {
         categoryLabel: 'Research',
         image: 'https://images.unsplash.com/photo-1555255707-c07966088b7b?w=800&h=400&fit=crop&q=80'
       }
-    ];
+      ];
+      
+      // Generate more articles by duplicating and varying the base articles
+      const allArticles = [];
+      const variations = [
+        'Latest', 'New', 'Revolutionary', 'Breakthrough', 'Advanced', 'Cutting-edge',
+        'Innovative', 'Next-generation', 'State-of-the-art', 'Groundbreaking'
+      ];
+      
+      for (let i = 0; i < count; i++) {
+        const baseIndex = i % baseArticles.length;
+        const base = baseArticles[baseIndex];
+        const variation = variations[i % variations.length];
+        
+        allArticles.push({
+          ...base,
+          id: `${base.id}-${i + 1}`,
+          title: i < baseArticles.length 
+            ? base.title 
+            : `${variation} ${base.title.replace(/^(New|Latest|Revolutionary|Advanced|Cutting-edge|Innovative|Next-generation|State-of-the-art|Groundbreaking)\s+/i, '')}`,
+          publishedAt: new Date(Date.now() - i * 86400000).toISOString(), // Vary dates
+        });
+      }
+      
+      return allArticles;
+    };
+    
+    // Generate at least 60 articles (10+ pages) for endless pagination
+    const allFallbackArticles = generateFallbackArticles(60);
     
     // Paginate fallback articles
     const startIndex = (currentPage - 1) * pageSize;

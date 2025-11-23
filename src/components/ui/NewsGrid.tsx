@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { NewsletterArticle } from '@/types';
 import { NewsCard } from './NewsCard';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -28,6 +28,7 @@ export function NewsGrid({
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalArticles, setTotalArticles] = useState(0);
+  const sectionRef = useRef<HTMLElement>(null);
   const CARDS_PER_PAGE = 6;
 
   useEffect(() => {
@@ -262,13 +263,24 @@ export function NewsGrid({
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setCurrentPage(newPage);
-      // Scroll to top of section smoothly
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Scroll to the section instead of top of page
+      setTimeout(() => {
+        if (sectionRef.current) {
+          const offset = 100; // Offset for fixed navigation
+          const elementPosition = sectionRef.current.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - offset;
+          
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+          });
+        }
+      }, 100); // Small delay to ensure DOM is updated
     }
   };
 
   return (
-    <section className={`py-20 bg-neutral-50 dark:bg-neutral-800 ${className}`}>
+    <section ref={sectionRef} className={`py-20 bg-neutral-50 dark:bg-neutral-800 ${className}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {showTitle && (
           <div className="text-center mb-8 sm:mb-12">
