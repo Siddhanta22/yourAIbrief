@@ -48,6 +48,10 @@ const nextConfig = {
       },
     ];
   },
+  // Ensure API routes are not statically optimized
+  async rewrites() {
+    return [];
+  },
 
   images: {
     domains: [
