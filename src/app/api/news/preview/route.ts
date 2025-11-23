@@ -35,15 +35,26 @@ export async function GET(request: NextRequest) {
       const articles = result.articles || [];
       const totalResults = result.totalResults || 0;
       
-      // If no articles returned, return error
+      // If no articles returned, log warning but don't error - might be temporary
       if (!articles || articles.length === 0) {
-        console.error(`❌ No articles returned from NewsAPI for page ${currentPage}`);
+        console.warn(`⚠️ No articles returned from NewsAPI for page ${currentPage}`);
+        console.warn('This could mean:');
+        console.warn('1. Filters are too strict and no articles match');
+        console.warn('2. NewsAPI rate limit reached');
+        console.warn('3. Temporary issue with news service');
+        // Return empty array instead of error - let frontend handle gracefully
         return NextResponse.json({
-          success: false,
-          error: 'No articles available',
-          message: 'NewsAPI returned no articles. This could mean: 1) API key is invalid/expired, 2) Rate limit reached, 3) No articles match the filters. Check Vercel logs for details.',
-          page: currentPage
-        }, { status: 500 });
+          success: true,
+          articles: [],
+          pagination: {
+            currentPage,
+            pageSize,
+            totalPages: 0,
+            totalArticles: 0
+          },
+          timestamp: new Date().toISOString(),
+          message: 'No articles available at the moment. Please check back later.'
+        });
       }
       
       console.log(`✅ Successfully fetched ${articles.length} articles from NewsAPI for page ${currentPage}`);
@@ -96,30 +107,28 @@ export async function GET(request: NextRequest) {
           data: data
         });
         
-        let errorMessage = 'Failed to fetch news from NewsAPI';
+        // User-friendly error messages
+        let userMessage = 'We\'re having trouble loading the latest news right now.';
         if (status === 401) {
-          errorMessage = 'NewsAPI authentication failed - API key is invalid or expired';
+          userMessage = 'We\'re experiencing a temporary issue with our news service. Our team has been notified and is working to resolve it.';
         } else if (status === 429) {
-          errorMessage = 'NewsAPI rate limit exceeded - Too many requests';
+          userMessage = 'Our news service is temporarily busy. Please try again in a few moments.';
         } else if (status === 400) {
-          errorMessage = 'NewsAPI bad request - Invalid query parameters';
+          userMessage = 'We\'re experiencing a temporary issue loading news. Please try again later.';
         }
         
         return NextResponse.json({
           success: false,
-          error: errorMessage,
-          details: data,
-          status: status,
-          message: 'Please check your NEWS_API_KEY in Vercel environment variables and ensure it is valid. See NEWS_API_SETUP.md for instructions.'
+          error: userMessage,
+          message: userMessage
         }, { status: 500 });
       }
       
-      // Handle other errors
+      // Handle other errors with user-friendly message
       return NextResponse.json({
         success: false,
-        error: 'Failed to fetch news',
-        message: error?.message || 'Unknown error occurred while fetching news',
-        details: 'Check Vercel logs for more information'
+        error: 'We\'re having trouble loading the latest news right now.',
+        message: 'We\'re experiencing a temporary issue with our news service. Please try again in a few moments.'
       }, { status: 500 });
     }
   } catch (outerError: any) {
@@ -127,9 +136,8 @@ export async function GET(request: NextRequest) {
     console.error('❌ Unexpected error in news preview:', outerError);
     return NextResponse.json({
       success: false,
-      error: 'Unexpected error',
-      message: outerError?.message || 'An unexpected error occurred',
-      details: 'Check Vercel logs for more information'
+      error: 'We\'re having trouble loading the latest news right now.',
+      message: 'We\'re experiencing a temporary issue. Please try again in a few moments.'
     }, { status: 500 });
   }
 }

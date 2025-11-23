@@ -154,22 +154,25 @@ export function NewsGrid({
             </div>
           ) : error ? (
             <div className="text-center py-12">
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 max-w-2xl mx-auto">
-                <h3 className="text-lg font-semibold text-red-800 dark:text-red-200 mb-2">
-                  Failed to Load News
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-6 max-w-2xl mx-auto">
+                <h3 className="text-lg font-semibold text-amber-800 dark:text-amber-200 mb-2">
+                  Unable to Load News
                 </h3>
-                <p className="text-red-700 dark:text-red-300 mb-4">
+                <p className="text-amber-700 dark:text-amber-300">
                   {error}
-                </p>
-                <p className="text-sm text-red-600 dark:text-red-400">
-                  Please ensure NEWS_API_KEY is properly configured in Vercel environment variables. 
-                  See NEWS_API_SETUP.md for instructions.
                 </p>
               </div>
             </div>
           ) : articles.length === 0 ? (
-            <div className="text-center text-neutral-600 dark:text-neutral-400 py-12">
-              <p>No articles available right now. Please check back later.</p>
+            <div className="text-center py-12">
+              <div className="bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-6 max-w-2xl mx-auto">
+                <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-200 mb-2">
+                  No Articles Available
+                </h3>
+                <p className="text-neutral-600 dark:text-neutral-400">
+                  We're currently updating our news feed. Please check back in a few moments for the latest AI news and updates.
+                </p>
+              </div>
             </div>
           ) : (
             <>

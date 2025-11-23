@@ -142,7 +142,7 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
 
     while (filtered.length < page * pageSize && rawPage <= MAX_RAW_PAGES && !reachedEnd) {
       const params = buildParams(rawPage);
-      console.log('[NewsAPI] Request params:', { ...params, apiKey: '***' }); // Hide API key in logs
+      console.log('[NewsAPI] Request params:', params);
       const res = await axios.get(NEWS_API_URL, { params });
       console.log(`[NewsAPI] Response status: ${res.status}`);
       console.log(`[NewsAPI] Total results from API: ${res.data?.totalResults || 0}`);
@@ -153,15 +153,11 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
         reachedEnd = true;
       }
 
-      // Log filtering stats
-      const withImages = raw.filter((a: any) => a.urlToImage && typeof a.urlToImage === 'string' && a.urlToImage.trim() !== '');
-      const afterSourceFilter = withImages.filter((a: any) => !SOURCE_BLOCKLIST.some(blocked => (a.source?.name || '').toLowerCase().includes(blocked.toLowerCase())));
-      const afterKeywordFilter = afterSourceFilter.filter((a: any) => !KEYWORD_BLOCKLIST.some(rx => rx.test(`${a.title} ${a.description || ''}`)));
-      const afterAIFilter = afterKeywordFilter.filter((a: any) => isAIArticle(a));
-      
-      console.log(`[NewsAPI] Filtering stats for page ${rawPage}: ${raw.length} raw -> ${withImages.length} with images -> ${afterSourceFilter.length} after source filter -> ${afterKeywordFilter.length} after keyword filter -> ${afterAIFilter.length} after AI filter`);
-
-      const pageFiltered = afterAIFilter
+      const pageFiltered = raw
+        .filter((a: any) => a.urlToImage && typeof a.urlToImage === 'string' && a.urlToImage.trim() !== '')
+        .filter((a: any) => !SOURCE_BLOCKLIST.some(blocked => (a.source?.name || '').toLowerCase().includes(blocked.toLowerCase())))
+        .filter((a: any) => !KEYWORD_BLOCKLIST.some(rx => rx.test(`${a.title} ${a.description || ''}`)))
+        .filter((a: any) => isAIArticle(a))
         .map((a: any) => {
           const category = categorizeArticle(a);
           return {
@@ -231,7 +227,7 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
 
     return { articles: pageArticles, totalResults: approxTotal };
   } catch (e: any) {
-    // Log the error but re-throw it so the caller can handle it properly
+    // Log detailed error information
     if (e.response) {
       const status = e.response.status;
       const data = e.response.data;
@@ -247,14 +243,17 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
       } else {
         console.error(`[NewsAPI] ❌ Unexpected error: ${status}`);
       }
+      
+      // Re-throw axios errors so they can be handled upstream
+      throw e;
     } else if (e.request) {
       console.error('[NewsAPI] ❌ No response received from NewsAPI');
       console.error('[NewsAPI] Request details:', e.request);
+      throw new Error('Unable to connect to news service. Please try again later.');
     } else {
       console.error('[NewsAPI] ❌ Failed to fetch news:', e.message || e);
+      throw e;
     }
-    // Re-throw the error so the API route can handle it properly
-    throw e;
   }
 }
 
