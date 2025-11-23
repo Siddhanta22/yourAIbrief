@@ -229,49 +229,71 @@ export function NewsletterPreview() {
               
               {/* Pagination Controls */}
               {totalPages > 1 && (
-                <div className="mt-8 flex items-center justify-center gap-2">
-                  <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    aria-label="Previous page"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                  
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-                      <button
-                        key={pageNum}
-                        onClick={() => handlePageChange(pageNum)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                          currentPage === pageNum
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600'
-                        }`}
-                        aria-label={`Go to page ${pageNum}`}
-                        aria-current={currentPage === pageNum ? 'page' : undefined}
-                      >
-                        {pageNum}
-                      </button>
-                    ))}
+                <div className="mt-8 flex flex-col items-center gap-4">
+                  <div className="flex items-center justify-center gap-1 sm:gap-2 flex-wrap">
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="p-2 sm:p-2.5 rounded-lg bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                      aria-label="Previous page"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    
+                    <div className="flex items-center gap-1 overflow-x-auto max-w-full px-2">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+                        // Show first page, last page, current page, and pages around current
+                        const showPage = 
+                          pageNum === 1 || 
+                          pageNum === totalPages || 
+                          (pageNum >= currentPage - 1 && pageNum <= currentPage + 1);
+                        
+                        if (!showPage) {
+                          // Show ellipsis
+                          if (pageNum === currentPage - 2 || pageNum === currentPage + 2) {
+                            return (
+                              <span key={pageNum} className="px-2 text-neutral-500">
+                                ...
+                              </span>
+                            );
+                          }
+                          return null;
+                        }
+                        
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => handlePageChange(pageNum)}
+                            className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center ${
+                              currentPage === pageNum
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600'
+                            }`}
+                            aria-label={`Go to page ${pageNum}`}
+                            aria-current={currentPage === pageNum ? 'page' : undefined}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="p-2 sm:p-2.5 rounded-lg bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                      aria-label="Next page"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
                   </div>
                   
-                  <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    aria-label="Next page"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-                </div>
-              )}
-              
-              {/* Page info */}
-              {totalPages > 1 && (
-                <div className="mt-4 text-center text-sm text-neutral-600 dark:text-neutral-400">
-                  Page {currentPage} of {totalPages} • Showing {articles.length} of {totalArticles} articles
+                  {/* Page info */}
+                  <div className="text-center text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 px-4">
+                    <span className="block sm:inline">Page {currentPage} of {totalPages}</span>
+                    <span className="hidden sm:inline"> • </span>
+                    <span className="block sm:inline">Showing {articles.length} of {totalArticles} articles</span>
+                  </div>
                 </div>
               )}
             </>

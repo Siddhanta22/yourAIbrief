@@ -324,7 +324,7 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.8 }}
-            className="flex justify-center items-center space-x-8 text-sm text-neutral-600 dark:text-neutral-400"
+            className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-8 text-sm text-neutral-600 dark:text-neutral-400"
           >
             <div className="flex items-center">
               <Users className="w-4 h-4 mr-2" />

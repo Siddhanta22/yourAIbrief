@@ -17,6 +17,12 @@ export const metadata: Metadata = {
   authors: [{ name: 'YourAIbrief Team' }],
   creator: 'YourAIbrief Platform',
   publisher: 'YourAIbrief',
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 5,
+    userScalable: true,
+  },
   formatDetection: {
     email: false,
     address: false,

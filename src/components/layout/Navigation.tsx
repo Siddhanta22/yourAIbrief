@@ -156,9 +156,9 @@ export function Navigation() {
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center"
           >
-            <Link href="/" className="flex items-center space-x-2">
-              <Mail className="w-8 h-8 text-primary-600" />
-              <span className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
+            <Link href="/" className="flex items-center space-x-1 sm:space-x-2">
+              <Mail className="w-6 h-6 sm:w-8 sm:h-8 text-primary-600" />
+              <span className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-neutral-100">
                 YourAIbrief
               </span>
             </Link>
