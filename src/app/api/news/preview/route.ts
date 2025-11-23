@@ -24,21 +24,38 @@ export async function GET(request: NextRequest) {
     }
 
     console.log(`📰 Fetching real news from NewsAPI - Page ${currentPage}, Size ${pageSize}`);
-    const curationService = new ContentCurationService();
-    // Fetch articles for the specific page - this will fetch different articles for each page
-    const { articles, totalResults } = await curationService.fetchContent([], currentPage, pageSize);
     
-    // If no articles returned, log and use fallback
-    if (!articles || articles.length === 0) {
-      console.warn(`⚠️ No articles returned from NewsAPI for page ${currentPage}`);
-      console.warn('This could mean:');
-      console.warn('1. NEWS_API_KEY is invalid or expired');
-      console.warn('2. NewsAPI rate limit reached');
-      console.warn('3. No articles match the filters');
-      throw new Error('No articles available from NewsAPI');
+    let articles: any[] = [];
+    let totalResults = 0;
+    
+    try {
+      const curationService = new ContentCurationService();
+      // Fetch articles for the specific page - this will fetch different articles for each page
+      const result = await curationService.fetchContent([], currentPage, pageSize);
+      articles = result.articles || [];
+      totalResults = result.totalResults || 0;
+      
+      // If no articles returned, log and use fallback
+      if (!articles || articles.length === 0) {
+        console.warn(`⚠️ No articles returned from NewsAPI for page ${currentPage}`);
+        console.warn('This could mean:');
+        console.warn('1. NEWS_API_KEY is invalid or expired');
+        console.warn('2. NewsAPI rate limit reached');
+        console.warn('3. No articles match the filters');
+        throw new Error('No articles available from NewsAPI');
+      }
+      
+      console.log(`✅ Successfully fetched ${articles.length} articles from NewsAPI for page ${currentPage}`);
+    } catch (fetchError: any) {
+      console.error('❌ Error fetching from NewsAPI:', fetchError);
+      console.error('Error details:', {
+        message: fetchError?.message,
+        stack: fetchError?.stack,
+        response: fetchError?.response?.data
+      });
+      // Re-throw to trigger fallback
+      throw fetchError;
     }
-    
-    console.log(`✅ Successfully fetched ${articles.length} articles from NewsAPI for page ${currentPage}`);
     
     // Normalize dates to ISO strings for JSON serialization and ensure image is included
     const normalizedArticles = articles.map(article => ({
@@ -72,8 +89,20 @@ export async function GET(request: NextRequest) {
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     
     return response;
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ News preview error:', error);
+    console.error('Error type:', error?.constructor?.name);
+    console.error('Error message:', error?.message);
+    console.error('Error stack:', error?.stack);
+    
+    if (error?.response) {
+      console.error('API Error Response:', {
+        status: error.response.status,
+        statusText: error.response.statusText,
+        data: error.response.data
+      });
+    }
+    
     console.error('Falling back to static content - THIS IS NOT REAL NEWS');
     console.error('To get real news, ensure NEWS_API_KEY is set in Vercel environment variables');
     
