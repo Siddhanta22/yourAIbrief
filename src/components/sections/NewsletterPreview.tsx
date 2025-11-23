@@ -2,11 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { NewsletterArticle } from '@/types';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export function NewsletterPreview() {
   const [articles, setArticles] = useState<NewsletterArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalArticles, setTotalArticles] = useState(0);
+  const CARDS_PER_PAGE = 6;
 
   useEffect(() => {
     const fetchNews = async () => {
@@ -14,7 +19,7 @@ export function NewsletterPreview() {
         setLoading(true);
         setError(null);
         // Always bypass cache so homepage shows fresh cards
-        const response = await fetch('/api/news/preview', { 
+        const response = await fetch(`/api/news/preview?page=${currentPage}&limit=${CARDS_PER_PAGE}`, { 
           cache: 'no-store',
           headers: {
             'Content-Type': 'application/json',
@@ -42,13 +47,24 @@ export function NewsletterPreview() {
         }));
         
         setArticles(normalizedArticles);
+        
+        // Update pagination info if available
+        if (data.pagination) {
+          setTotalPages(data.pagination.totalPages || 1);
+          setTotalArticles(data.pagination.totalArticles || normalizedArticles.length);
+        } else {
+          // Estimate total pages based on articles received
+          setTotalPages(Math.ceil((normalizedArticles.length * 2) / CARDS_PER_PAGE));
+          setTotalArticles(normalizedArticles.length * 2);
+        }
+        
         setError(null);
       } catch (err) {
         console.error('Error fetching news preview:', err);
         // Don't show error to user, just use fallback silently
         setError(null);
-        // Fallback to static content
-        setArticles([
+        // Fallback to static content - ensure exactly 6 cards
+        const fallbackArticles: NewsletterArticle[] = [
           {
             id: '1',
             title: 'New Transformer Architecture Shows 40% Performance Improvement',
@@ -70,7 +86,7 @@ export function NewsletterPreview() {
             publishedAt: new Date(),
             tags: ['multimodal', 'openai', 'understanding'],
             relevance: 0.8,
-            category: 'ai-news',
+            category: 'research',
             image: 'https://images.unsplash.com/photo-1676299083043-88b7b3e0d5e1?w=800&h=400&fit=crop&q=80'
           },
           {
@@ -96,15 +112,50 @@ export function NewsletterPreview() {
             relevance: 0.6,
             category: 'research',
             image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&h=400&fit=crop&q=80'
+          },
+          {
+            id: '5',
+            title: 'Enterprise AI Adoption Reaches 85% in Fortune 500',
+            summary: 'Latest survey shows dramatic increase in AI implementation across major corporations.',
+            url: '#',
+            source: 'TechCrunch',
+            publishedAt: new Date(),
+            tags: ['enterprise', 'adoption', 'survey'],
+            relevance: 0.8,
+            category: 'research',
+            image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&h=400&fit=crop&q=80'
+          },
+          {
+            id: '6',
+            title: 'Neural Networks Achieve Human-Level Reasoning',
+            summary: 'New research demonstrates AI systems matching human performance in complex reasoning tasks.',
+            url: '#',
+            source: 'Nature',
+            publishedAt: new Date(),
+            tags: ['reasoning', 'human-level', 'neural-networks'],
+            relevance: 0.9,
+            category: 'research',
+            image: 'https://images.unsplash.com/photo-1555255707-c07966088b7b?w=800&h=400&fit=crop&q=80'
           }
-        ]);
+        ];
+        setArticles(fallbackArticles);
+        setTotalPages(2); // Assume 2 pages for fallback
+        setTotalArticles(12);
       } finally {
         setLoading(false);
       }
     };
 
     fetchNews();
-  }, []);
+  }, [currentPage]);
+  
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+      // Scroll to top of section smoothly
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   return (
     <section className="py-20 bg-neutral-50 dark:bg-neutral-800">
@@ -136,44 +187,94 @@ export function NewsletterPreview() {
               <p>No preview articles available right now. Please check back later.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {articles.map((article) => (
-                <a
-                  key={article.id}
-                  href={(article as any).url || '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group rounded-xl overflow-hidden bg-neutral-50 dark:bg-neutral-700 hover:shadow-lg transition-shadow"
-                >
-                  {Boolean((article as any).image) && (
-                    <div className="h-40 bg-neutral-200 dark:bg-neutral-600 overflow-hidden">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={(article as any).image}
-                        alt={(article as any).title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {articles.slice(0, CARDS_PER_PAGE).map((article) => (
+                  <a
+                    key={article.id}
+                    href={(article as any).url || '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group rounded-xl overflow-hidden bg-neutral-50 dark:bg-neutral-700 hover:shadow-lg transition-shadow"
+                  >
+                    {Boolean((article as any).image) && (
+                      <div className="h-40 bg-neutral-200 dark:bg-neutral-600 overflow-hidden">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={(article as any).image}
+                          alt={(article as any).title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                    )}
+                    <div className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs px-2 py-1 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">
+                          {(article as any).categoryLabel || (article as any).category || 'AI'}
+                        </span>
+                        <span className="text-xs text-neutral-500">
+                          {new Date(article.publishedAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <h4 className="font-semibold text-neutral-900 dark:text-neutral-100 mb-2 line-clamp-2">
+                        {article.title}
+                      </h4>
+                      <p className="text-sm text-neutral-600 dark:text-neutral-300 line-clamp-3">
+                        {article.summary}
+                      </p>
                     </div>
-                  )}
-                  <div className="p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs px-2 py-1 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">
-                        {(article as any).categoryLabel || (article as any).category || 'AI'}
-                      </span>
-                      <span className="text-xs text-neutral-500">
-                        {new Date(article.publishedAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <h4 className="font-semibold text-neutral-900 dark:text-neutral-100 mb-2 line-clamp-2">
-                      {article.title}
-                    </h4>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-300 line-clamp-3">
-                      {article.summary}
-                    </p>
+                  </a>
+                ))}
+              </div>
+              
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="mt-8 flex items-center justify-center gap-2">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    aria-label="Previous page"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                      <button
+                        key={pageNum}
+                        onClick={() => handlePageChange(pageNum)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          currentPage === pageNum
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600'
+                        }`}
+                        aria-label={`Go to page ${pageNum}`}
+                        aria-current={currentPage === pageNum ? 'page' : undefined}
+                      >
+                        {pageNum}
+                      </button>
+                    ))}
                   </div>
-                </a>
-              ))}
-            </div>
+                  
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    aria-label="Next page"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
+              
+              {/* Page info */}
+              {totalPages > 1 && (
+                <div className="mt-4 text-center text-sm text-neutral-600 dark:text-neutral-400">
+                  Page {currentPage} of {totalPages} • Showing {articles.length} of {totalArticles} articles
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
