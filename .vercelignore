@@ -1,3 +1,0 @@
-# Exclude GitHub Actions from Vercel build
-.github/
-
