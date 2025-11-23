@@ -144,9 +144,14 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
       const params = buildParams(rawPage);
       console.log('[NewsAPI] Request params:', params);
       const res = await axios.get(NEWS_API_URL, { params });
-      console.log('[NewsAPI] Response status:', res.status);
+      console.log(`[NewsAPI] Response status: ${res.status}`);
+      console.log(`[NewsAPI] Total results from API: ${res.data?.totalResults || 0}`);
+      console.log(`[NewsAPI] Articles in response: ${res.data?.articles?.length || 0}`);
       const raw = res.data?.articles || [];
-      if (raw.length === 0) reachedEnd = true;
+      if (raw.length === 0) {
+        console.log('[NewsAPI] No articles in this page, reached end');
+        reachedEnd = true;
+      }
 
       const pageFiltered = raw
         .filter((a: any) => a.urlToImage && typeof a.urlToImage === 'string' && a.urlToImage.trim() !== '')
@@ -201,6 +206,7 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
           } as NewsletterArticle & { categoryLabel: string };
         });
       filtered.push(...pageFiltered);
+      console.log(`[NewsAPI] After filtering page ${rawPage}: ${pageFiltered.length} articles passed filters, total filtered: ${filtered.length}`);
       rawPage += 1;
     }
 
@@ -208,15 +214,39 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
     const end = start + pageSize;
     const pageArticles = filtered.slice(start, end);
 
+    console.log(`[NewsAPI] Final results - Total filtered: ${filtered.length}, Requested page: ${page}, Page size: ${pageSize}`);
+    console.log(`[NewsAPI] Returning ${pageArticles.length} articles for page ${page}`);
+
     // Best-effort total filtered count (within our cap); for UI pagination
     const approxTotal = reachedEnd ? filtered.length : Math.max(filtered.length, page * pageSize + (pageArticles.length < pageSize ? 0 : pageSize));
+
+    if (pageArticles.length === 0) {
+      console.warn(`[NewsAPI] ⚠️ No articles returned for page ${page} after filtering`);
+      console.warn(`[NewsAPI] This might mean filters are too strict or no articles match the criteria`);
+    }
 
     return { articles: pageArticles, totalResults: approxTotal };
   } catch (e: any) {
     if (e.response) {
-      console.error('[NewsAPI] Error response:', e.response.status, e.response.data);
+      const status = e.response.status;
+      const data = e.response.data;
+      console.error(`[NewsAPI] ❌ Error response - Status: ${status}`);
+      console.error('[NewsAPI] Error data:', JSON.stringify(data, null, 2));
+      
+      if (status === 401) {
+        console.error('[NewsAPI] ❌ Authentication failed - API key is invalid or expired');
+      } else if (status === 429) {
+        console.error('[NewsAPI] ❌ Rate limit exceeded - Too many requests');
+      } else if (status === 400) {
+        console.error('[NewsAPI] ❌ Bad request - Check query parameters');
+      } else {
+        console.error(`[NewsAPI] ❌ Unexpected error: ${status}`);
+      }
+    } else if (e.request) {
+      console.error('[NewsAPI] ❌ No response received from NewsAPI');
+      console.error('[NewsAPI] Request details:', e.request);
     } else {
-      console.error('Failed to fetch news from NewsAPI:', e);
+      console.error('[NewsAPI] ❌ Failed to fetch news:', e.message || e);
     }
     return { articles: [], totalResults: 0 };
   }
