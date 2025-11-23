@@ -3,7 +3,7 @@
   "installCommand": "npm ci",
   "framework": "nextjs",
   "functions": {
-    "app/api/**/*.ts": {
+    "src/app/api/**/*.ts": {
       "maxDuration": 30
     }
   },
@@ -17,5 +17,11 @@
     "NODE_ENV": "production",
     "PRISMA_GENERATE_DATAPROXY": "true",
     "NEXT_SKIP_BUILD_TRACES": "1"
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
+    }
+  ]
 } 
