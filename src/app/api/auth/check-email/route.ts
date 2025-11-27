@@ -6,13 +6,36 @@ export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email } = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (jsonError) {
+      return NextResponse.json({
+        success: false,
+        message: 'Invalid JSON in request body'
+      }, { 
+        status: 400,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        }
+      });
+    }
+    const { email } = body;
     
     if (!email || !email.includes('@')) {
       return NextResponse.json({
         success: false,
         message: 'Valid email is required'
-      }, { status: 400 });
+      }, { 
+        status: 400,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        }
+      });
     }
 
     // Check if user exists
@@ -44,6 +67,12 @@ export async function POST(request: NextRequest) {
           preferredSendTime: user.preferredSendTime
         },
         message: 'User found - redirecting to dashboard'
+      }, {
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        }
       });
     } else {
       // User doesn't exist - proceed with registration
@@ -51,6 +80,12 @@ export async function POST(request: NextRequest) {
         success: true,
         userExists: false,
         message: 'New user - proceed with registration'
+      }, {
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        }
       });
     }
 
@@ -60,7 +95,14 @@ export async function POST(request: NextRequest) {
       success: false,
       message: 'Error checking email',
       error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    }, { 
+      status: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      }
+    });
   }
 }
 

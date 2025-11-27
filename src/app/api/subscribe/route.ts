@@ -23,7 +23,22 @@ export async function POST(request: NextRequest) {
   console.log('POST /api/subscribe called');
   
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (jsonError) {
+      return NextResponse.json({
+        success: false,
+        message: 'Invalid JSON in request body'
+      }, { 
+        status: 400,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        }
+      });
+    }
     console.log('Request body:', body);
     
     const { name, email, interests, preferredSendTime, frequency } = body;
