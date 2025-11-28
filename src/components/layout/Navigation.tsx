@@ -211,9 +211,22 @@ export function Navigation() {
                           const email = session?.user?.email || userData?.email || localEmail!;
                           try {
                             const res = await fetch(`/api/user/preferences?email=${encodeURIComponent(email)}`);
+                            if (!res.ok) {
+                              console.error('Failed to fetch preferences:', res.status);
+                              toast.error('Failed to load preferences');
+                              return;
+                            }
                             const data = await res.json();
-                            setPrefData({ frequency: data?.preferences?.frequency, preferredSendTime: data?.preferredSendTime, topics: data?.topics || [] });
-                          } catch {}
+                            if (data.success) {
+                              setPrefData({ frequency: data?.preferences?.frequency, preferredSendTime: data?.preferredSendTime, topics: data?.topics || [] });
+                            } else {
+                              console.error('Preferences fetch error:', data.message);
+                              toast.error(data.message || 'Failed to load preferences');
+                            }
+                          } catch (error) {
+                            console.error('Error fetching preferences:', error);
+                            toast.error('Failed to load preferences');
+                          }
                           setOpenAccount(false);
                           setShowPrefs(true);
                         }}
@@ -310,11 +323,35 @@ export function Navigation() {
           initialTopics={prefData.topics || []}
           onSave={async ({ frequency, preferredSendTime, topics }) => {
             const email = session?.user?.email || localEmail!;
-            await fetch('/api/user/preferences', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ email, frequency, preferredSendTime, topics }),
-            });
+            try {
+              const res = await fetch('/api/user/preferences', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, frequency, preferredSendTime, topics }),
+              });
+              
+              if (!res.ok) {
+                const errorData = await res.json().catch(() => ({ message: 'Failed to update preferences' }));
+                toast.error(errorData.message || 'Failed to update preferences');
+                return;
+              }
+              
+              const data = await res.json();
+              if (data.success) {
+                toast.success('Preferences updated successfully!');
+                // Update local user data if available
+                if (userData) {
+                  const updatedUserData = { ...userData, preferences: data.user.preferences, preferredSendTime: data.user.preferredSendTime };
+                  localStorage.setItem('userData', JSON.stringify(updatedUserData));
+                  setUserData(updatedUserData);
+                }
+              } else {
+                toast.error(data.message || 'Failed to update preferences');
+              }
+            } catch (error) {
+              console.error('Error updating preferences:', error);
+              toast.error('Failed to update preferences. Please try again.');
+            }
           }}
         />
       </div>

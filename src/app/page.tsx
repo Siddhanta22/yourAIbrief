@@ -48,6 +48,14 @@ function HomeContent() {
         body: JSON.stringify({ email }),
       });
       
+      if (!response.ok) {
+        console.error('Home: Check email failed:', response.status);
+        // On error, assume new user
+        localStorage.removeItem('subscribedEmail');
+        setUserData(null);
+        return;
+      }
+      
       const data = await response.json();
       console.log('Home: Check existing user response:', data);
       
@@ -64,6 +72,8 @@ function HomeContent() {
       }
     } catch (error) {
       console.error('Home: Error checking existing user:', error);
+      // On error, assume new user
+      localStorage.removeItem('subscribedEmail');
       setUserData(null);
     }
   };

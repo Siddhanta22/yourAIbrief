@@ -2,6 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
+}
+
 const updateSchema = z.object({
   email: z.string().email(),
   name: z.string().optional(),
@@ -11,32 +25,106 @@ const updateSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const email = searchParams.get('email');
-  if (!email) {
-    return NextResponse.json({ success: false, message: 'Email is required' }, { status: 400 });
+  try {
+    const { searchParams } = new URL(req.url);
+    const email = searchParams.get('email');
+    if (!email) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Email is required' 
+      }, { 
+        status: 400,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        }
+      });
+    }
+    
+    const user = await prisma.user.findUnique({ 
+      where: { email }, 
+      include: { userInterests: true } 
+    });
+    
+    if (!user) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'User not found' 
+      }, { 
+        status: 404,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        }
+      });
+    }
+    
+    return NextResponse.json({
+      success: true,
+      name: user.name,
+      preferredSendTime: user.preferredSendTime ?? null,
+      preferences: user.preferences ?? {},
+      topics: user.userInterests.map(ui => ui.category),
+    }, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      }
+    });
+  } catch (error) {
+    console.error('Get preferences error:', error);
+    return NextResponse.json({ 
+      success: false, 
+      message: 'Failed to fetch preferences',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, { 
+      status: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      }
+    });
   }
-  const user = await prisma.user.findUnique({ where: { email }, include: { userInterests: true } });
-  if (!user) {
-    return NextResponse.json({ success: false, message: 'User not found' }, { status: 404 });
-  }
-  return NextResponse.json({
-    success: true,
-    name: user.name,
-    preferredSendTime: user.preferredSendTime ?? null,
-    preferences: user.preferences ?? {},
-    topics: user.userInterests.map(ui => ui.category),
-  });
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch (jsonError) {
+      return NextResponse.json({
+        success: false,
+        message: 'Invalid JSON in request body'
+      }, { 
+        status: 400,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        }
+      });
+    }
+
     const { email, name, frequency, preferredSendTime, topics } = updateSchema.parse(body);
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (!existing) {
-      return NextResponse.json({ success: false, message: 'User not found' }, { status: 404 });
+      return NextResponse.json({ 
+        success: false, 
+        message: 'User not found' 
+      }, { 
+        status: 404,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        }
+      });
     }
 
     const newPrefs: any = { ...(existing.preferences as any) };
@@ -74,9 +162,53 @@ export async function POST(req: NextRequest) {
     }
 
     const interests = await prisma.userInterest.findMany({ where: { userId: updated.id } });
-    return NextResponse.json({ success: true, user: { email: updated.email, name: updated.name, preferredSendTime: updated.preferredSendTime, preferences: updated.preferences, topics: interests.map(i => i.category) } });
+    return NextResponse.json({ 
+      success: true, 
+      user: { 
+        email: updated.email, 
+        name: updated.name, 
+        preferredSendTime: updated.preferredSendTime, 
+        preferences: updated.preferences, 
+        topics: interests.map(i => i.category) 
+      } 
+    }, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      }
+    });
   } catch (e) {
-    return NextResponse.json({ success: false, message: 'Failed to update preferences' }, { status: 400 });
+    console.error('Preferences update error:', e);
+    
+    // Handle Zod validation errors
+    if (e instanceof z.ZodError) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Invalid request data',
+        errors: e.errors
+      }, { 
+        status: 400,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        }
+      });
+    }
+    
+    return NextResponse.json({ 
+      success: false, 
+      message: 'Failed to update preferences',
+      error: e instanceof Error ? e.message : 'Unknown error'
+    }, { 
+      status: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      }
+    });
   }
 }
 
