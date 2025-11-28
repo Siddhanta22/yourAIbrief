@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/authOptions';
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
@@ -17,7 +19,6 @@ export async function OPTIONS(request: NextRequest) {
 }
 
 const updateSchema = z.object({
-  email: z.string().email(),
   name: z.string().optional(),
   frequency: z.enum(['daily','weekly','monthly']).optional(),
   preferredSendTime: z.string().min(1).optional(),
@@ -26,14 +27,15 @@ const updateSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const email = searchParams.get('email');
-    if (!email) {
+    // Get user from session instead of email query param
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.email) {
       return NextResponse.json({ 
         success: false, 
-        message: 'Email is required' 
+        message: 'Unauthorized' 
       }, { 
-        status: 400,
+        status: 401,
         headers: {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -43,7 +45,7 @@ export async function GET(req: NextRequest) {
     }
     
     const user = await prisma.user.findUnique({ 
-      where: { email }, 
+      where: { email: session.user.email }, 
       include: { userInterests: true } 
     });
     
@@ -93,6 +95,23 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    // Get user from session instead of email from request body
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.email) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Unauthorized' 
+      }, { 
+        status: 401,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        }
+      });
+    }
+
     let body;
     try {
       body = await req.json();
@@ -110,7 +129,8 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const { email, name, frequency, preferredSendTime, topics } = updateSchema.parse(body);
+    const { name, frequency, preferredSendTime, topics } = updateSchema.parse(body);
+    const email = session.user.email;
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (!existing) {

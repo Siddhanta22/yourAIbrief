@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
 import { 
   TrendingUp, 
@@ -28,27 +29,48 @@ interface UserData {
 
 export function DashboardSection() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get user data from localStorage
-    const userData = localStorage.getItem('userData');
-    if (userData) {
-      try {
-        const parsedUser = JSON.parse(userData);
-        setUser(parsedUser);
-        console.log('Dashboard: User data loaded:', parsedUser);
-      } catch (error) {
-        console.error('Dashboard: Error parsing user data:', error);
-        router.push('/?show=signup');
-      }
-    } else {
-      console.log('Dashboard: No user data found, redirecting to signup');
-      router.push('/?show=signup');
+    // Redirect if not authenticated
+    if (status === 'unauthenticated') {
+      router.push('/');
+      return;
     }
-    setLoading(false);
-  }, [router]);
+
+    // Fetch user data from API using session
+    if (status === 'authenticated' && session?.user?.email) {
+      const fetchUserData = async () => {
+        try {
+          const response = await fetch('/api/user/preferences');
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+              // Construct user object from API response and session
+              setUser({
+                id: session.user.id || '',
+                email: session.user.email || '',
+                name: data.name || '',
+                emailVerified: false,
+                isActive: true,
+                preferences: data.preferences || {},
+                preferredSendTime: data.preferredSendTime || '08:00',
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Dashboard: Error fetching user data:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchUserData();
+    } else {
+      setLoading(false);
+    }
+  }, [status, session, router]);
 
 
   if (loading) {

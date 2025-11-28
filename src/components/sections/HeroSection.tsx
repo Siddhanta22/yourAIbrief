@@ -5,99 +5,26 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Sparkles, TrendingUp, Users, BookOpen, Settings } from 'lucide-react';
 import { SubscriptionForm } from '@/components/forms/SubscriptionForm';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useSession, signIn } from 'next-auth/react';
 
 export function HeroSection() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formMessage, setFormMessage] = useState<string | null>(null);
-  const [localEmail, setLocalEmail] = useState<string | null>(null);
   const router = useRouter();
   const { data: session, status } = useSession();
 
+  // Remove localStorage-based email checking - use NextAuth session instead
+  // localStorage can still be used for UX convenience (pre-filling email), but not for auth
+
+  // If user is authenticated, redirect to dashboard
   useEffect(() => {
-    const checkLocalEmail = () => {
-      try {
-        const email = localStorage.getItem('subscribedEmail');
-        // Only update state if email actually changed to avoid unnecessary re-renders
-        setLocalEmail(prevEmail => {
-          if (prevEmail !== email) {
-            console.log('HeroSection: Email in localStorage changed:', email);
-            return email;
-          }
-          return prevEmail;
-        });
-      } catch {}
-    };
-    
-    // Check initially
-    checkLocalEmail();
-    
-    // Listen for storage changes (when localStorage is cleared from another tab/component)
-    window.addEventListener('storage', checkLocalEmail);
-    
-    // Note: Removed interval - storage event listener handles cross-tab changes
-    // and same-tab changes will trigger re-renders naturally
-    
-    return () => {
-      window.removeEventListener('storage', checkLocalEmail);
-    };
-  }, []); // Empty deps - only run on mount/unmount
-
-  // Check for existing user on mount
-  useEffect(() => {
-    // Only check if user exists in database when we have an email and aren't authenticated
-    if (localEmail && status !== 'authenticated') {
-      console.log('HeroSection: Found email, checking if user exists:', localEmail);
-      checkExistingUser(localEmail);
+    if (status === 'authenticated' && session?.user) {
+      router.push('/dashboard');
     }
-  }, [status, localEmail]);
-
-  const checkExistingUser = async (email: string) => {
-    try {
-      const response = await fetch('/api/auth/check-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      
-      const data = await response.json();
-      console.log('HeroSection: Check existing user response:', data);
-      
-      if (data.success && data.userExists) {
-        // User exists, redirect to dashboard
-        console.log('HeroSection: Existing user found, redirecting to dashboard');
-        localStorage.setItem('userData', JSON.stringify(data.user));
-        localStorage.setItem('subscribedEmail', email);
-        window.location.href = '/dashboard';
-      } else {
-        // User doesn't exist, clear email
-        console.log('HeroSection: User not found, clearing email');
-        localStorage.removeItem('subscribedEmail');
-        setLocalEmail(null);
-      }
-    } catch (error) {
-      console.error('HeroSection: Error checking existing user:', error);
-    }
-  };
-
-  // FORCE show signup form - HeroSection should NEVER show logged-in state
-  const [forceShowSignup, setForceShowSignup] = useState(false);
+  }, [status, session, router]);
   
-  useEffect(() => {
-    // Check if we're coming from logout or if there's a signup parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    const fromLogout = urlParams.get('from') === 'logout';
-    const showSignup = urlParams.get('show') === 'signup';
-    
-    if (fromLogout || showSignup) {
-      console.log('Force showing signup form due to URL parameters');
-      setForceShowSignup(true);
-    }
-  }, []);
-  
-  // ALWAYS show signup form in HeroSection - logged-in users should go to dashboard
-  const isLoggedIn = false; // FORCE FALSE - HeroSection is only for signup
-  // Removed excessive logging - only log when necessary for debugging
+  // Show signup form only if not authenticated
+  const isLoggedIn = status === 'authenticated' && !!session?.user;
 
   const handleSubscribe = async (
     name: string,
@@ -127,17 +54,26 @@ export function HeroSection() {
         console.log('Email check response:', checkData);
 
         if (checkData.success && checkData.userExists) {
-          // User exists - redirect to dashboard
-          console.log('User exists, redirecting to dashboard');
-          localStorage.setItem('userData', JSON.stringify(checkData.user));
-          localStorage.setItem('subscribedEmail', email);
-          setLocalEmail(email);
-          setFormMessage('Welcome back! Redirecting to your dashboard...');
+          // User exists - sign them in with NextAuth and redirect to dashboard
+          console.log('User exists, signing in with NextAuth');
+          setFormMessage('Welcome back! Signing you in...');
           
-          // Redirect to dashboard after a short delay
-          setTimeout(() => {
-            window.location.href = '/dashboard';
-          }, 1500);
+          try {
+            const result = await signIn('email', {
+              email,
+              redirect: false,
+            });
+            
+            if (result?.ok) {
+              // Successfully signed in, redirect to dashboard
+              router.push('/dashboard');
+            } else {
+              setFormMessage('Failed to sign in. Please try again.');
+            }
+          } catch (signInError) {
+            console.error('Sign in error:', signInError);
+            setFormMessage('Failed to sign in. Please try again.');
+          }
           return;
         }
       }
@@ -213,24 +149,29 @@ export function HeroSection() {
       }
       
       if (data.success) {
-        // Store user data and email in localStorage for email-first auth
+        // Subscription successful - now sign in with NextAuth
+        setFormMessage('Subscription successful! Signing you in...');
+        
         try {
-          if (data.user) {
-            localStorage.setItem('userData', JSON.stringify(data.user));
-            console.log('Stored userData in localStorage:', data.user);
+          // Sign in using the email credentials provider
+          const result = await signIn('email', {
+            email,
+            redirect: false,
+          });
+          
+          if (result?.ok) {
+            // Successfully signed in, redirect to subscribed page
+            router.push('/subscribed');
+          } else {
+            // Sign in failed, but subscription succeeded - still redirect
+            console.warn('Sign in failed but subscription succeeded:', result?.error);
+            router.push('/subscribed');
           }
-          localStorage.setItem('subscribedEmail', email);
-          console.log('Stored email in localStorage:', email);
-        } catch (error) {
-          console.error('Failed to store data in localStorage:', error);
-        }
-        
-        setFormMessage('Subscription successful! Welcome to YourAIbrief! Check your email for a welcome message.');
-        
-        // Redirect to success page after a short delay
-        setTimeout(() => {
+        } catch (signInError) {
+          console.error('Sign in error after subscription:', signInError);
+          // Subscription succeeded even if sign in failed
           router.push('/subscribed');
-        }, 2000);
+        }
       } else if (data.alreadySubscribed) {
         setFormMessage('You are already subscribed with this email address.');
       } else {

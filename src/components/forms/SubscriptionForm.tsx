@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Check } from 'lucide-react';
+import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 interface SubscriptionFormProps {
   onSubmit: (
@@ -40,6 +42,7 @@ export function SubscriptionForm({ onSubmit, isSubmitting = false }: Subscriptio
   const [dayOfWeek, setDayOfWeek] = useState('Monday');
   const [dayOfMonth, setDayOfMonth] = useState('1');
   const [timeOfDay, setTimeOfDay] = useState('08:00 AM');
+  const router = useRouter();
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,16 +68,30 @@ export function SubscriptionForm({ onSubmit, isSubmitting = false }: Subscriptio
       console.log('Email check response:', checkData);
 
       if (checkData.success && checkData.userExists) {
-        // User exists - redirect to dashboard immediately
-        console.log('User exists, redirecting to dashboard');
-        localStorage.setItem('userData', JSON.stringify(checkData.user));
-        localStorage.setItem('subscribedEmail', email);
+        // User exists - sign them in with NextAuth and redirect to dashboard
+        console.log('User exists, signing in with NextAuth');
         
-        // Show welcome back message and redirect
-        alert('Welcome back! Redirecting to your dashboard...');
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 1500);
+        try {
+          const result = await signIn('email', {
+            email,
+            redirect: false,
+          });
+          
+          if (result?.ok) {
+            // Successfully signed in, redirect to dashboard
+            router.push('/dashboard');
+          } else {
+            console.error('Sign in failed:', result?.error);
+            // Still allow them to continue as new user if sign in fails
+            setIsNewUser(true);
+            setShowInterests(true);
+          }
+        } catch (signInError) {
+          console.error('Sign in error:', signInError);
+          // Still allow them to continue as new user if sign in fails
+          setIsNewUser(true);
+          setShowInterests(true);
+        }
         return;
       }
       

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { User, Mail, Clock, Settings, TrendingUp, Users, BarChart3 } from 'lucide-react';
 
 interface UserData {
@@ -16,27 +17,48 @@ interface UserData {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get user data from localStorage
-    const userData = localStorage.getItem('userData');
-    if (userData) {
-      try {
-        const parsedUser = JSON.parse(userData);
-        setUser(parsedUser);
-        console.log('User data loaded:', parsedUser);
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-        router.push('/');
-      }
-    } else {
-      console.log('No user data found, redirecting to home');
+    // Redirect if not authenticated
+    if (status === 'unauthenticated') {
       router.push('/');
+      return;
     }
-    setLoading(false);
-  }, [router]);
+
+    // Fetch user data from API using session
+    if (status === 'authenticated' && session?.user?.email) {
+      const fetchUserData = async () => {
+        try {
+          const response = await fetch('/api/user/preferences');
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+              // Construct user object from API response and session
+              setUser({
+                id: session.user.id || '',
+                email: session.user.email || '',
+                name: data.name || '',
+                emailVerified: false,
+                isActive: true,
+                preferences: data.preferences || {},
+                preferredSendTime: data.preferredSendTime || '08:00',
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchUserData();
+    } else {
+      setLoading(false);
+    }
+  }, [status, session, router]);
 
 
   if (loading) {

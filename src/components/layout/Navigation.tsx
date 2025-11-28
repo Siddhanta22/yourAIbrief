@@ -27,66 +27,15 @@ export function Navigation() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
-  const [localEmail, setLocalEmail] = useState<string | null>(null);
-  const [userData, setUserData] = useState<any>(null);
   const [openAccount, setOpenAccount] = useState(false);
   const [showPrefs, setShowPrefs] = useState(false);
   const [prefData, setPrefData] = useState<{ frequency?: string; preferredSendTime?: string; topics?: string[] }>({});
   const accountMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => setMounted(true), []);
-  useEffect(() => {
-    try {
-      const storedEmail = localStorage.getItem('subscribedEmail');
-      const storedUserData = localStorage.getItem('userData');
-      
-      setLocalEmail(storedEmail);
-      
-      if (storedUserData) {
-        const parsed = JSON.parse(storedUserData);
-        console.log('Navigation: User is logged in via email-first auth', parsed);
-        setUserData(parsed);
-      } else if (storedEmail) {
-        // User has email but no userData, check if they exist
-        console.log('Navigation: Found email, checking if user exists:', storedEmail);
-        checkExistingUser(storedEmail);
-      } else {
-        setUserData(null);
-        console.log('Navigation: No user data found, clearing state');
-      }
-    } catch (error) {
-      console.error('Navigation: Error reading localStorage:', error);
-      setUserData(null);
-    }
-  }, []);
-
-  const checkExistingUser = async (email: string) => {
-    try {
-      const response = await fetch('/api/auth/check-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      
-      const data = await response.json();
-      console.log('Navigation: Check existing user response:', data);
-      
-      if (data.success && data.userExists) {
-        // User exists, store their data
-        localStorage.setItem('userData', JSON.stringify(data.user));
-        setUserData(data.user);
-        console.log('Navigation: Existing user found');
-      } else {
-        // User doesn't exist, clear email
-        localStorage.removeItem('subscribedEmail');
-        setUserData(null);
-        console.log('Navigation: User not found, clearing state');
-      }
-    } catch (error) {
-      console.error('Navigation: Error checking existing user:', error);
-      setUserData(null);
-    }
-  };
+  
+  // Remove localStorage-based auth - use NextAuth session instead
+  // localStorage can still be used for UX convenience (like pre-filling email), but not for auth
 
   // Click outside handler for account menu
   useEffect(() => {
@@ -110,35 +59,20 @@ export function Navigation() {
     setOpenAccount(false);
     
     try {
-      // Clear all data
-      localStorage.clear();
-      setLocalEmail(null);
-      setUserData(null);
-      
-      // Clear cookies
-      document.cookie.split(";").forEach(function(c) { 
-        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
-      });
-      
-      // Call logout API
+      // Call logout API to clean up server-side session
       await fetch('/api/auth/logout', { method: 'POST' });
       
-      // NextAuth logout
-      if (status === 'authenticated') {
-        await signOut({ redirect: false });
-      }
-      
-      // Redirect to home
-      window.location.href = '/?show=signup';
+      // NextAuth logout (this handles client-side session cleanup)
+      await signOut({ redirect: true, callbackUrl: '/' });
     } catch (error) {
       console.error('Logout error:', error);
-      window.location.href = '/?show=signup';
+      // Even if API call fails, still sign out from NextAuth
+      await signOut({ redirect: true, callbackUrl: '/' });
     }
   };
 
-  // Check if user is logged in (either via NextAuth or email-first auth)
-  const isLoggedIn = (status === 'authenticated' && session?.user) || (userData && userData.id && userData.email);
-  console.log('Navigation isLoggedIn:', isLoggedIn, 'status:', status, 'session:', !!session, 'userData:', userData);
+  // Check if user is logged in via NextAuth session only
+  const isLoggedIn = status === 'authenticated' && !!session?.user;
 
   const navigation = [
     { name: 'Home', href: '/' },
@@ -208,9 +142,14 @@ export function Navigation() {
                       <div className="px-2 py-2 text-xs text-neutral-500 truncate">{session?.user?.email || userData?.email || localEmail}</div>
                       <button
                         onClick={async () => {
-                          const email = session?.user?.email || userData?.email || localEmail!;
+                          // Use session email instead of localStorage
+                          if (!session?.user?.email) {
+                            toast.error('Please sign in to update preferences');
+                            return;
+                          }
+                          
                           try {
-                            const res = await fetch(`/api/user/preferences?email=${encodeURIComponent(email)}`);
+                            const res = await fetch('/api/user/preferences');
                             if (!res.ok) {
                               console.error('Failed to fetch preferences:', res.status);
                               toast.error('Failed to load preferences');
@@ -322,12 +261,17 @@ export function Navigation() {
           initialTime={prefData.preferredSendTime || '08:00 AM'}
           initialTopics={prefData.topics || []}
           onSave={async ({ frequency, preferredSendTime, topics }) => {
-            const email = session?.user?.email || localEmail!;
+            // Use session-based auth - no need to pass email
+            if (!session?.user?.email) {
+              toast.error('Please sign in to update preferences');
+              return;
+            }
+            
             try {
               const res = await fetch('/api/user/preferences', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, frequency, preferredSendTime, topics }),
+                body: JSON.stringify({ frequency, preferredSendTime, topics }),
               });
               
               if (!res.ok) {
@@ -339,12 +283,7 @@ export function Navigation() {
               const data = await res.json();
               if (data.success) {
                 toast.success('Preferences updated successfully!');
-                // Update local user data if available
-                if (userData) {
-                  const updatedUserData = { ...userData, preferences: data.user.preferences, preferredSendTime: data.user.preferredSendTime };
-                  localStorage.setItem('userData', JSON.stringify(updatedUserData));
-                  setUserData(updatedUserData);
-                }
+                // Session will be updated automatically on next page load
               } else {
                 toast.error(data.message || 'Failed to update preferences');
               }

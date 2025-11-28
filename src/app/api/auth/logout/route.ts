@@ -34,8 +34,7 @@ export async function POST(request: NextRequest) {
         }
       });
     } else {
-      // No session found - user is already logged out or using email-first auth
-      // For email-first auth, logout is handled client-side via localStorage.clear()
+      // No session found - user is already logged out
       return NextResponse.json({
         success: true,
         message: 'Logout completed (no active session found)'

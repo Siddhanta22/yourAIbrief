@@ -1,5 +1,6 @@
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import GoogleProvider from 'next-auth/providers/google';
+import CredentialsProvider from 'next-auth/providers/credentials';
 // import GitHubProvider from 'next-auth/providers/github';
 // import AppleProvider from 'next-auth/providers/apple';
 import { AdapterUser } from 'next-auth/adapters';
@@ -12,6 +13,44 @@ export const authOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+    // Email-based credentials provider for email-first auth
+    CredentialsProvider({
+      id: 'email',
+      name: 'Email',
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email) {
+          return null;
+        }
+
+        // Find or create user by email
+        let user = await prisma.user.findUnique({
+          where: { email: credentials.email as string },
+        });
+
+        if (!user) {
+          // Create new user if they don't exist
+          // This allows email-first signup flow
+          user = await prisma.user.create({
+            data: {
+              email: credentials.email as string,
+              name: null,
+              isActive: true,
+              emailVerified: null,
+            },
+          });
+        }
+
+        // Return user object that will be stored in session
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+        };
+      },
     }),
     // GitHubProvider({
     //   clientId: process.env.GITHUB_CLIENT_ID!,
@@ -58,7 +97,7 @@ export const authOptions = {
         if ((dbUser as any)?.hasOnboarded === false) {
           return `${baseUrl}/onboarding`;
         }
-        return `${baseUrl}/member`;
+        return `${baseUrl}/dashboard`;
       }
       return baseUrl;
     },

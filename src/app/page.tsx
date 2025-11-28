@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { HeroSection } from '@/components/sections/HeroSection';
 import { DashboardSection } from '@/components/sections/DashboardSection';
 import { FeaturesSection } from '@/components/sections/FeaturesSection';
@@ -12,71 +13,7 @@ import toast from 'react-hot-toast';
 
 function HomeContent() {
   const searchParams = useSearchParams();
-  const [userData, setUserData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Check if user is logged in via email-first auth
-    try {
-      const storedUserData = localStorage.getItem('userData');
-      const storedEmail = localStorage.getItem('subscribedEmail');
-      
-      if (storedUserData) {
-        const parsed = JSON.parse(storedUserData);
-        setUserData(parsed);
-        console.log('Home: User is logged in via email-first auth', parsed);
-      } else if (storedEmail) {
-        // User has email but no userData, check if they exist in database
-        console.log('Home: Found email in localStorage, checking if user exists:', storedEmail);
-        checkExistingUser(storedEmail);
-      } else {
-        setUserData(null);
-        console.log('Home: No user data found, showing signup form');
-      }
-    } catch (error) {
-      console.error('Home: Error reading localStorage:', error);
-      setUserData(null);
-    }
-    setLoading(false);
-  }, []);
-
-  const checkExistingUser = async (email: string) => {
-    try {
-      const response = await fetch('/api/auth/check-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      
-      if (!response.ok) {
-        console.error('Home: Check email failed:', response.status);
-        // On error, assume new user
-        localStorage.removeItem('subscribedEmail');
-        setUserData(null);
-        return;
-      }
-      
-      const data = await response.json();
-      console.log('Home: Check existing user response:', data);
-      
-      if (data.success && data.userExists) {
-        // User exists, store their data and show dashboard
-        localStorage.setItem('userData', JSON.stringify(data.user));
-        setUserData(data.user);
-        console.log('Home: Existing user found, showing dashboard');
-      } else {
-        // User doesn't exist, clear email and show signup
-        localStorage.removeItem('subscribedEmail');
-        setUserData(null);
-        console.log('Home: User not found, showing signup form');
-      }
-    } catch (error) {
-      console.error('Home: Error checking existing user:', error);
-      // On error, assume new user
-      localStorage.removeItem('subscribedEmail');
-      setUserData(null);
-    }
-  };
+  const { data: session, status } = useSession();
 
   useEffect(() => {
     const success = searchParams.get('success');
@@ -95,7 +32,8 @@ function HomeContent() {
     }
   }, [searchParams]);
 
-  if (loading) {
+  // Show loading state while checking session
+  if (status === 'loading') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -103,8 +41,8 @@ function HomeContent() {
     );
   }
 
-  // Show dashboard if user is logged in, otherwise show signup form
-  if (userData && userData.id) {
+  // Show dashboard if user is authenticated via NextAuth, otherwise show signup form
+  if (status === 'authenticated' && session?.user) {
     return (
       <main className="min-h-screen">
         <DashboardSection />
