@@ -22,42 +22,46 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Redirect if not authenticated
-    if (status === 'unauthenticated') {
-      router.push('/');
+    // Wait for session to load
+    if (status === 'loading') {
       return;
     }
 
-    // Fetch user data from API using session
-    if (status === 'authenticated' && session?.user?.email) {
-      const fetchUserData = async () => {
-        try {
-          const response = await fetch('/api/user/preferences');
-          if (response.ok) {
-            const data = await response.json();
-            if (data.success) {
-              // Construct user object from API response and session
-              setUser({
-                id: session.user.id || '',
-                email: session.user.email || '',
-                name: data.name || '',
-                emailVerified: false,
-                isActive: true,
-                preferences: data.preferences || {},
-                preferredSendTime: data.preferredSendTime || '08:00',
-              });
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching user data:', error);
-        } finally {
-          setLoading(false);
-        }
-      };
-      fetchUserData();
-    } else {
+    // Redirect if not authenticated or session/user is missing
+    if (status !== 'authenticated' || !session?.user) {
+      router.push('/');
       setLoading(false);
+      return;
     }
+
+    // TypeScript now knows session.user exists
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch('/api/user/preferences');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            // Construct user object from API response and session
+            // session.user is guaranteed to exist at this point
+            setUser({
+              id: session.user.id ?? '',
+              email: session.user.email ?? '',
+              name: data.name ?? '',
+              emailVerified: false,
+              isActive: true,
+              preferences: data.preferences ?? {},
+              preferredSendTime: data.preferredSendTime ?? '08:00',
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
   }, [status, session, router]);
 
 
