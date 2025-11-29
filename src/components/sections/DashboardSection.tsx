@@ -47,16 +47,17 @@ export function DashboardSection() {
           const response = await fetch('/api/user/preferences');
           if (response.ok) {
             const data = await response.json();
-            if (data.success) {
+            if (data.success && session?.user?.email) {
               // Construct user object from API response and session
               setUser({
-                id: session.user.id || '',
-                email: session.user.email || '',
-                name: data.name || '',
+                // ID is not needed in this component; avoid relying on extended NextAuth types
+                id: '',
+                email: session.user.email ?? '',
+                name: data.name ?? '',
                 emailVerified: false,
                 isActive: true,
-                preferences: data.preferences || {},
-                preferredSendTime: data.preferredSendTime || '08:00',
+                preferences: data.preferences ?? {},
+                preferredSendTime: data.preferredSendTime ?? '08:00',
               });
             }
           }
