@@ -180,7 +180,9 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
           } as NewsletterArticle & { category: string; categoryLabel: string };
         })
         .filter(
-          (a): a is NewsletterArticle & { category: string; categoryLabel: string } =>
+          (
+            a: (NewsletterArticle & { category: string; categoryLabel: string }) | null
+          ): a is NewsletterArticle & { category: string; categoryLabel: string } =>
             a !== null
         );
       filtered.push(...pageFiltered);
@@ -219,7 +221,9 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
           } as NewsletterArticle & { category: string; categoryLabel: string };
         })
         .filter(
-          (a): a is NewsletterArticle & { category: string; categoryLabel: string } =>
+          (
+            a: (NewsletterArticle & { category: string; categoryLabel: string }) | null
+          ): a is NewsletterArticle & { category: string; categoryLabel: string } =>
             a !== null
         );
       filtered.push(...pageFiltered);
