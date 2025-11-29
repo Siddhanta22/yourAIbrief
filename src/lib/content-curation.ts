@@ -161,6 +161,10 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
         .filter((a: any) => isAIArticle(a))
         .map((a: any) => {
           const category = categorizeArticle(a);
+          // Hard block categories we don't want to surface at all
+          if (category === 'big-tech' || category === 'tools') {
+            return null;
+          }
           return {
             id: a.url,
             title: a.title,
@@ -173,8 +177,12 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
             category,
             categoryLabel: CATEGORY_LABELS[category] || 'Other',
             image: a.urlToImage,
-          } as NewsletterArticle & { categoryLabel: string };
-        });
+          } as NewsletterArticle & { category: string; categoryLabel: string };
+        })
+        .filter(
+          (a): a is NewsletterArticle & { category: string; categoryLabel: string } =>
+            a !== null
+        );
       filtered.push(...pageFiltered);
       rawPage += 1;
     }
@@ -192,6 +200,10 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
         .filter((a: any) => isAIArticle(a))
         .map((a: any) => {
           const category = categorizeArticle(a);
+          // Hard block categories we don't want to surface at all
+          if (category === 'big-tech' || category === 'tools') {
+            return null;
+          }
           return {
             id: a.url,
             title: a.title,
@@ -204,8 +216,12 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
             category,
             categoryLabel: CATEGORY_LABELS[category] || 'Other',
             image: a.urlToImage,
-          } as NewsletterArticle & { categoryLabel: string };
-        });
+          } as NewsletterArticle & { category: string; categoryLabel: string };
+        })
+        .filter(
+          (a): a is NewsletterArticle & { category: string; categoryLabel: string } =>
+            a !== null
+        );
       filtered.push(...pageFiltered);
       console.log(`[NewsAPI] After filtering page ${rawPage}: ${pageFiltered.length} articles passed filters, total filtered: ${filtered.length}`);
       rawPage += 1;
