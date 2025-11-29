@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Sparkles, TrendingUp, Users, BookOpen, Settings } from 'lucide-react';
+import { ArrowRight, Sparkles, BookOpen, Settings } from 'lucide-react';
 import { SubscriptionForm } from '@/components/forms/SubscriptionForm';
 import { useRouter } from 'next/navigation';
 import { useSession, signIn } from 'next-auth/react';
@@ -259,24 +259,6 @@ export function HeroSection() {
             Stay ahead with curated AI news, breakthroughs, and insights. 
             Personalized for researchers, developers, and AI enthusiasts.
           </motion.p>
-
-          {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.8 }}
-            className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-8 text-sm text-neutral-600 dark:text-neutral-400"
-          >
-            <div className="flex items-center">
-              <Users className="w-4 h-4 mr-2" />
-              <span>10,000+ subscribers</span>
-            </div>
-            <div className="flex items-center">
-              <TrendingUp className="w-4 h-4 mr-2" />
-              <span>99% open rate</span>
-            </div>
-          </motion.div>
-
 
           {/* Content based on login status */}
           <motion.div
