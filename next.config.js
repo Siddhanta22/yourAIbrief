@@ -10,32 +10,6 @@ const nextConfig = {
   compress: false,
   // Exclude .github directory from build
   pageExtensions: ['ts', 'tsx', 'js', 'jsx'],
-  webpack: (config, { isServer, webpack }) => {
-    // Exclude .github directory and other problematic paths from webpack processing
-    config.watchOptions = {
-      ...config.watchOptions,
-      ignored: [
-        '**/.github/**',
-        '**/node_modules/**',
-        '**/.git/**',
-        '**/*.md',
-        '**/*.log',
-        '**/build.sh',
-        '**/Dockerfile',
-        '**/railway.json',
-      ],
-    };
-    
-    // Add resolve fallbacks to prevent issues
-    config.resolve = {
-      ...config.resolve,
-      fallback: {
-        ...config.resolve?.fallback,
-      },
-    };
-    
-    return config;
-  },
   // Ensure API routes work properly
   async headers() {
     return [
