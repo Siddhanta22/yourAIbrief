@@ -1,14 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    // Only mark Prisma as external; including 'styled-jsx' here causes runtime
-    // resolution issues in Vercel serverless functions (cannot find module).
-    serverComponentsExternalPackages: ['@prisma/client'],
+  // Explicitly set turbopack root to this project to avoid Vercel mis-detecting
+  // the workspace when there are multiple lockfiles on the filesystem.
+  turbopack: {
+    root: __dirname,
   },
-  // Disable problematic features
-  swcMinify: false,
+  // Disable compression (matches previous behaviour)
   compress: false,
-  // Exclude .github directory from build
+  // Exclude .ts/.tsx/.js/.jsx from being treated as pages in legacy `pages/`
+  // since we are using the App Router in `src/app`.
   pageExtensions: ['ts', 'tsx', 'js', 'jsx'],
   // Ensure API routes work properly
   async headers() {
