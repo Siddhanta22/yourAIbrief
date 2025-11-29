@@ -107,38 +107,53 @@ export async function GET(request: NextRequest) {
           data: data
         });
         
-        // User-friendly error messages
-        let userMessage = 'We\'re having trouble loading the latest news right now.';
-        if (status === 401) {
-          userMessage = 'We\'re experiencing a temporary issue with our news service. Our team has been notified and is working to resolve it.';
-        } else if (status === 429) {
-          userMessage = 'Our news service is temporarily busy. Please try again in a few moments.';
-        } else if (status === 400) {
-          userMessage = 'We\'re experiencing a temporary issue loading news. Please try again later.';
-        }
-        
+        // For the homepage preview, fail "softly":
+        // return an empty successful payload so the UI simply stops paginating
+        // instead of showing an error banner if NewsAPI rate-limits or errors.
         return NextResponse.json({
-          success: false,
-          error: userMessage,
-          message: userMessage
-        }, { status: 500 });
+          success: true,
+          articles: [],
+          pagination: {
+            currentPage,
+            pageSize,
+            totalPages: Math.max(1, currentPage - 1),
+            totalArticles: 0,
+          },
+          timestamp: new Date().toISOString(),
+          message: 'No additional articles available at the moment.',
+        });
       }
       
-      // Handle other errors with user-friendly message
+      // Handle other errors with a soft failure as well
       return NextResponse.json({
-        success: false,
-        error: 'We\'re having trouble loading the latest news right now.',
-        message: 'We\'re experiencing a temporary issue with our news service. Please try again in a few moments.'
-      }, { status: 500 });
+        success: true,
+        articles: [],
+        pagination: {
+          currentPage,
+          pageSize,
+          totalPages: Math.max(1, currentPage - 1),
+          totalArticles: 0,
+        },
+        timestamp: new Date().toISOString(),
+        message: 'No additional articles available at the moment.',
+      });
     }
   } catch (outerError: any) {
     // Catch any unexpected errors
     console.error('❌ Unexpected error in news preview:', outerError);
+    // Outer catch should also fail softly for the preview endpoint
     return NextResponse.json({
-      success: false,
-      error: 'We\'re having trouble loading the latest news right now.',
-      message: 'We\'re experiencing a temporary issue. Please try again in a few moments.'
-    }, { status: 500 });
+      success: true,
+      articles: [],
+      pagination: {
+        currentPage: 1,
+        pageSize: 6,
+        totalPages: 1,
+        totalArticles: 0,
+      },
+      timestamp: new Date().toISOString(),
+      message: 'No additional articles available at the moment.',
+    });
   }
 }
 

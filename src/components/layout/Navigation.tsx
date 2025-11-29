@@ -78,7 +78,7 @@ export function Navigation() {
     { name: 'Home', href: '/' },
     { name: 'About', href: '/about' },
     { name: 'Contact', href: '/contact' },
-  ];
+  ] as const;
 
   return (
     <nav className="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-700 relative z-50">
@@ -100,15 +100,25 @@ export function Navigation() {
 
           {/* Desktop Navigation - Center */}
           <div className="hidden md:flex items-center justify-center space-x-8">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors duration-200"
-              >
-                {item.name}
-              </Link>
-            ))}
+            {navigation.map((item) => {
+              const isHome = item.name === 'Home';
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  onClick={(e) => {
+                    if (isHome && typeof window !== 'undefined' && window.location.pathname === '/') {
+                      // Force a full reload + scroll to top to reset any in-progress subscription step
+                      e.preventDefault();
+                      window.location.href = '/';
+                    }
+                  }}
+                  className="text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors duration-200"
+                >
+                  {item.name}
+                </Link>
+              );
+            })}
           </div>
 
           {/* Right side - Theme + Profile */}
@@ -213,16 +223,26 @@ export function Navigation() {
             className="md:hidden"
           >
             <div className="px-2 pt-2 pb-3 space-y-1 border-t border-neutral-200 dark:border-neutral-700">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  onClick={() => setIsOpen(false)}
-                  className="block px-3 py-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors duration-200"
-                >
-                  {item.name}
-                </Link>
-              ))}
+              {navigation.map((item) => {
+                const isHome = item.name === 'Home';
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    onClick={(e) => {
+                      setIsOpen(false);
+                      if (isHome && typeof window !== 'undefined' && window.location.pathname === '/') {
+                        // Force full reload + scroll to top when already on home
+                        e.preventDefault();
+                        window.location.href = '/';
+                      }
+                    }}
+                    className="block px-3 py-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors duration-200"
+                  >
+                    {item.name}
+                  </Link>
+                );
+              })}
               <div className="pt-4 border-t border-neutral-200 dark:border-neutral-700">
                 {status === 'loading' ? (
                   <div className="flex items-center justify-center py-2">
