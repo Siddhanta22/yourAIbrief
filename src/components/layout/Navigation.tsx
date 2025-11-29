@@ -139,7 +139,9 @@ export function Navigation() {
                   </button>
                   {openAccount && (
                     <div className="absolute right-0 mt-2 w-60 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-lg p-2 z-50">
-                      <div className="px-2 py-2 text-xs text-neutral-500 truncate">{session?.user?.email || userData?.email || localEmail}</div>
+                      <div className="px-2 py-2 text-xs text-neutral-500 truncate">
+                        {session?.user?.email ?? 'Account'}
+                      </div>
                       <button
                         onClick={async () => {
                           // Use session email instead of localStorage
