@@ -1,7 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    serverComponentsExternalPackages: ['@prisma/client', 'styled-jsx'],
+    // Only mark Prisma as external; including 'styled-jsx' here causes runtime
+    // resolution issues in Vercel serverless functions (cannot find module).
+    serverComponentsExternalPackages: ['@prisma/client'],
   },
   // Disable problematic features
   swcMinify: false,
