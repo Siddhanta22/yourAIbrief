@@ -34,6 +34,9 @@ export default function DashboardPage() {
       return;
     }
 
+    // At this point, we know session and session.user are defined
+    const sessionUser = session.user;
+
     // TypeScript now knows session.user exists
     const fetchUserData = async () => {
       try {
@@ -44,8 +47,8 @@ export default function DashboardPage() {
             // Construct user object from API response and session
             // session.user is guaranteed to exist at this point
             setUser({
-              id: session.user.id ?? '',
-              email: session.user.email ?? '',
+              id: sessionUser.id ?? '',
+              email: sessionUser.email ?? '',
               name: data.name ?? '',
               emailVerified: false,
               isActive: true,
