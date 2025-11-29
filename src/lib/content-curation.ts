@@ -4,9 +4,10 @@ import axios from 'axios';
 const NEWS_API_KEY = process.env.NEWS_API_KEY;
 const NEWS_API_URL = 'https://newsapi.org/v2/everything';
 
-// Add this mapping for display names at the top of the file or near the categorizeArticle function
+// Display labels for content categories used in newsletter sections
+// Renamed 'Industry Pulse' to a more neutral label to avoid using that phrasing.
 const CATEGORY_LABELS: Record<string, string> = {
-  'ai-news': 'Industry Pulse',
+  'ai-news': 'AI News',
   'crypto': 'Crypto',
   'fintech': 'Fintech',
   'startups': 'Startups',
