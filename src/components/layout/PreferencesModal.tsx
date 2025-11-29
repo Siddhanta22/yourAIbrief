@@ -95,12 +95,12 @@ export function PreferencesModal({ isOpen, onClose, initialName = '', initialFre
             <div>
               <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">Topics</label>
               <div className="grid grid-cols-2 gap-2 max-h-48 overflow-auto">
-                {['ai-news','startups','big-tech','crypto','fintech','edtech','autonomous','healthtech','tools','policy','research','opinion'].map(cat => (
+                {['ai-news','startups','crypto','fintech','edtech','autonomous','healthtech','policy','research','opinion'].map(cat => (
                   <button
                     key={cat}
                     type="button"
                     onClick={() => setTopics(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat])}
-                    className={`p-2 rounded-lg border text-left capitalize ${topics.includes(cat) ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300' : 'border-neutral-200 dark:border-neutral-700 hover:border-primary-300 dark:hover:border-primary-600'}`}
+                    className={`p-2 rounded-lg border text-left capitalize ${topics.includes(cat) ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300' : 'border-neutral-200 dark:border-neutral-700 hover:border-primary-300 dark:hover-border-primary-600'}`}
                   >
                     {cat.replace('-', ' ')}
                   </button>

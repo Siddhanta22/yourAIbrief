@@ -303,7 +303,12 @@ export class ContentCurationService {
 
     // 1. Per-topic sections (strict whitelist)
     const topicSections: NewsletterSection[] = [];
-    for (const interest of userInterests) {
+    // Filter out any categories we no longer support in the UI (e.g. 'tools', 'big-tech')
+    const filteredInterests = userInterests.filter(
+      (interest) => interest !== 'tools' && interest !== 'big-tech'
+    );
+
+    for (const interest of filteredInterests) {
       // Only include articles from the strict whitelist and matching the topic
       const topicArticles = allArticles.articles
         .filter(article =>

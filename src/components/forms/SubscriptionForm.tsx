@@ -19,13 +19,11 @@ interface SubscriptionFormProps {
 const INTEREST_CATEGORIES = [
   { id: 'ai-news', label: 'AI News (General)', icon: '📰' },
   { id: 'startups', label: 'Startups & Funding', icon: '🚀' },
-  { id: 'big-tech', label: 'Big Tech & Industry', icon: '🏢' },
   { id: 'crypto', label: 'Crypto & Blockchain', icon: '🪙' },
   { id: 'fintech', label: 'Fintech & Business', icon: '💸' },
   { id: 'edtech', label: 'EdTech & Learning', icon: '🎓' },
   { id: 'autonomous', label: 'Autonomous & Robotics', icon: '🤖' },
   { id: 'healthtech', label: 'HealthTech & BioAI', icon: '🧬' },
-  { id: 'tools', label: 'Tools & Productivity', icon: '🛠️' },
   { id: 'policy', label: 'Policy & Ethics', icon: '⚖️' },
   { id: 'research', label: 'Research Breakthroughs', icon: '🔬' },
   { id: 'opinion', label: 'Opinion & Analysis', icon: '💡' },
