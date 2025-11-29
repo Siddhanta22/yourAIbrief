@@ -5,6 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { User, Mail, Clock, Settings, TrendingUp, Users, BarChart3 } from 'lucide-react';
 
+type SessionUserWithId = {
+  id?: string;
+  email?: string | null;
+  name?: string | null;
+};
+
 interface UserData {
   id: string;
   email: string;
@@ -35,7 +41,7 @@ export default function DashboardPage() {
     }
 
     // At this point, we know session and session.user are defined
-    const sessionUser = session.user;
+    const sessionUser = session.user as SessionUserWithId;
 
     // TypeScript now knows session.user exists
     const fetchUserData = async () => {
@@ -47,7 +53,9 @@ export default function DashboardPage() {
             // Construct user object from API response and session
             // session.user is guaranteed to exist at this point
             setUser({
-              id: sessionUser.id ?? '',
+              // We don't currently need the user ID on the client; keep it empty
+              // to avoid relying on NextAuth's extended user typing here.
+              id: '',
               email: sessionUser.email ?? '',
               name: data.name ?? '',
               emailVerified: false,
