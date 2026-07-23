@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { SimpleEmailService } from '@/lib/simple-email';
+import { createSignInToken, buildVerifyLink } from '@/lib/verificationToken';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -94,11 +95,16 @@ export async function POST(request: NextRequest) {
     
     console.log('User created:', user.id);
     
-            // Send welcome email
+            // Send a welcome email containing a one-time sign-in/confirmation link.
+            // No session is created here - the user must click the link to sign in.
             try {
+              const token = await createSignInToken(user.email);
+              const baseUrl = process.env.NEXTAUTH_URL || request.nextUrl.origin;
+              const verifyLink = buildVerifyLink(user.email, token, baseUrl);
+
               const emailService = new SimpleEmailService();
-              await emailService.sendWelcomeEmail(user.email, user.name || undefined);
-              console.log('Welcome email sent to:', user.email);
+              await emailService.sendWelcomeEmail(user.email, user.name || undefined, verifyLink);
+              console.log('Welcome/confirmation email sent to:', user.email);
             } catch (emailError) {
               console.error('Failed to send welcome email:', emailError);
               // Don't fail the subscription if email fails

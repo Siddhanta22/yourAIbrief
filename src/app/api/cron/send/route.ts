@@ -130,32 +130,29 @@ export async function GET(request: NextRequest) {
   let skippedUsers = 0;
   
   try {
-    // Check if this is a Vercel cron job, GitHub Actions, or manual trigger
-    const isVercelCron = request.headers.get('user-agent')?.includes('vercel-cron') || 
-                        request.headers.get('x-vercel-cron') === '1' ||
-                        request.nextUrl.searchParams.get('source') === 'vercel-cron';
-    
+    // Vercel's native Cron Jobs feature sends `Authorization: Bearer <CRON_SECRET>` automatically.
+    // GitHub Actions (see .github/workflows/hourly-newsletter.yml) sends it as a `key` query param.
+    // Every caller must present the real secret - no bypass based on headers/query params an
+    // attacker could spoof (e.g. `?source=vercel-cron` or a forged User-Agent).
+    const authHeader = request.headers.get('authorization');
+    const bearerToken = authHeader?.match(/^Bearer\s+(.+)$/i)?.[1];
+    const key = request.nextUrl.searchParams.get('key') || request.headers.get('x-cron-secret') || bearerToken;
+    const expected = process.env.CRON_SECRET;
+
+    if (!expected) {
+      console.error('[Cron] CRON_SECRET not configured');
+      return NextResponse.json({ ok: false, error: 'Cron secret not configured' }, { status: 500 });
+    }
+
+    if (key !== expected) {
+      console.error('[Cron] Unauthorized access attempt');
+      return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
     const isGitHubActions = request.headers.get('user-agent')?.includes('GitHub-Actions') ||
                            request.headers.get('x-cron-source') === 'github-actions' ||
                            request.nextUrl.searchParams.get('source') === 'github-actions';
-    
-    const key = request.nextUrl.searchParams.get('key') || request.headers.get('x-cron-secret');
-    const expected = process.env.CRON_SECRET;
-    
-    // Only require secret for manual access, not Vercel cron or GitHub Actions
-    if (!isVercelCron && !isGitHubActions) {
-      if (!expected) {
-        console.error('[Cron] CRON_SECRET not configured');
-        return NextResponse.json({ ok: false, error: 'Cron secret not configured' }, { status: 500 });
-      }
-      
-      if (key !== expected) {
-        console.error('[Cron] Unauthorized access attempt');
-        return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
-      }
-    }
-    
-    const source = isVercelCron ? 'Vercel Cron' : isGitHubActions ? 'GitHub Actions' : 'Manual';
+    const source = bearerToken ? 'Vercel Cron' : isGitHubActions ? 'GitHub Actions' : 'Manual';
     console.log(`[Cron] Request source: ${source}`);
 
     const now = new Date();

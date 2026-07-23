@@ -161,7 +161,9 @@ src/
 ## 🔧 API Endpoints
 
 ### **Authentication**
-- `POST /api/auth/confirm` - Email confirmation
+- `POST /api/auth/check-email` - Check if an email is already registered
+- `POST /api/auth/request-signin` - Send a one-time sign-in link to an existing account
+- `GET /auth/verify` - Redeem a sign-in link (issued by /api/subscribe or /api/auth/request-signin)
 - `GET /api/user/exists` - Check if user exists
 
 ### **User Management**

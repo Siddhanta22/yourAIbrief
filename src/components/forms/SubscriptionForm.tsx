@@ -3,8 +3,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Check } from 'lucide-react';
-import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 
 interface SubscriptionFormProps {
   onSubmit: (
@@ -40,7 +38,7 @@ export function SubscriptionForm({ onSubmit, isSubmitting = false }: Subscriptio
   const [dayOfWeek, setDayOfWeek] = useState('Monday');
   const [dayOfMonth, setDayOfMonth] = useState('1');
   const [timeOfDay, setTimeOfDay] = useState('08:00 AM');
-  const router = useRouter();
+  const [showCheckEmail, setShowCheckEmail] = useState(false);
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,30 +64,20 @@ export function SubscriptionForm({ onSubmit, isSubmitting = false }: Subscriptio
       console.log('Email check response:', checkData);
 
       if (checkData.success && checkData.userExists) {
-        // User exists - sign them in with NextAuth and redirect to dashboard
-        console.log('User exists, signing in with NextAuth');
-        
+        // User exists - send a one-time sign-in link instead of creating a
+        // session directly (typing an email alone is not proof of ownership)
+        console.log('User exists, sending sign-in link');
+
         try {
-          const result = await signIn('email', {
-            email,
-            redirect: false,
+          await fetch('/api/auth/request-signin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email }),
           });
-          
-          if (result?.ok) {
-            // Successfully signed in, redirect to dashboard
-            router.push('/dashboard');
-          } else {
-            console.error('Sign in failed:', result?.error);
-            // Still allow them to continue as new user if sign in fails
-            setIsNewUser(true);
-            setShowInterests(true);
-          }
-        } catch (signInError) {
-          console.error('Sign in error:', signInError);
-          // Still allow them to continue as new user if sign in fails
-          setIsNewUser(true);
-          setShowInterests(true);
+        } catch (requestError) {
+          console.error('Request sign-in error:', requestError);
         }
+        setShowCheckEmail(true);
         return;
       }
       
@@ -147,7 +135,28 @@ export function SubscriptionForm({ onSubmit, isSubmitting = false }: Subscriptio
 
   return (
     <div className="w-full max-w-md">
-      {!showInterests ? (
+      {showCheckEmail ? (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center space-y-3"
+        >
+          <Mail className="w-10 h-10 text-primary-600 mx-auto" />
+          <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+            Check your email
+          </h3>
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">
+            We've sent a sign-in link to <strong>{email}</strong>. Click it to continue - it expires in 15 minutes.
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowCheckEmail(false)}
+            className="btn-ghost w-full text-sm"
+          >
+            Back to email
+          </button>
+        </motion.div>
+      ) : !showInterests ? (
         <motion.form
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Sparkles, BookOpen, Settings } from 'lucide-react';
 import { SubscriptionForm } from '@/components/forms/SubscriptionForm';
 import { useRouter } from 'next/navigation';
-import { useSession, signIn } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 
 export function HeroSection() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -54,25 +54,19 @@ export function HeroSection() {
         console.log('Email check response:', checkData);
 
         if (checkData.success && checkData.userExists) {
-          // User exists - sign them in with NextAuth and redirect to dashboard
-          console.log('User exists, signing in with NextAuth');
-          setFormMessage('Welcome back! Signing you in...');
-          
+          // User exists - send a one-time sign-in link instead of creating a
+          // session directly (typing an email alone is not proof of ownership)
+          console.log('User exists, sending sign-in link');
+          setFormMessage('Check your email for a sign-in link.');
+
           try {
-            const result = await signIn('email', {
-              email,
-              redirect: false,
+            await fetch('/api/auth/request-signin', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email }),
             });
-            
-            if (result?.ok) {
-              // Successfully signed in, redirect to dashboard
-              router.push('/dashboard');
-            } else {
-              setFormMessage('Failed to sign in. Please try again.');
-            }
-          } catch (signInError) {
-            console.error('Sign in error:', signInError);
-            setFormMessage('Failed to sign in. Please try again.');
+          } catch (requestError) {
+            console.error('Request sign-in error:', requestError);
           }
           return;
         }
@@ -149,29 +143,10 @@ export function HeroSection() {
       }
       
       if (data.success) {
-        // Subscription successful - now sign in with NextAuth
-        setFormMessage('Subscription successful! Signing you in...');
-        
-        try {
-          // Sign in using the email credentials provider
-          const result = await signIn('email', {
-            email,
-            redirect: false,
-          });
-          
-          if (result?.ok) {
-            // Successfully signed in, redirect to subscribed page
-            router.push('/subscribed');
-          } else {
-            // Sign in failed, but subscription succeeded - still redirect
-            console.warn('Sign in failed but subscription succeeded:', result?.error);
-            router.push('/subscribed');
-          }
-        } catch (signInError) {
-          console.error('Sign in error after subscription:', signInError);
-          // Subscription succeeded even if sign in failed
-          router.push('/subscribed');
-        }
+        // Subscription successful - /api/subscribe already emailed a
+        // one-time confirm-and-sign-in link, so just point them at it.
+        setFormMessage('Subscription successful! Check your email to confirm and sign in.');
+        router.push('/subscribed');
       } else if (data.alreadySubscribed) {
         setFormMessage('You are already subscribed with this email address.');
       } else {

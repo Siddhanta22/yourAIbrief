@@ -27,12 +27,15 @@ export class SimpleEmailService {
     return { valid: true };
   }
 
-  async sendWelcomeEmail(email: string, name?: string): Promise<boolean> {
+  async sendWelcomeEmail(email: string, name?: string, verifyLink?: string): Promise<boolean> {
     try {
       if (!this.apiKey) {
         console.log('[SimpleEmail] No SendGrid API key, skipping email send');
         return true; // Return true for development
       }
+
+      const ctaLink = verifyLink || process.env.NEXTAUTH_URL || 'http://localhost:3000';
+      const ctaLabel = verifyLink ? 'Confirm & Sign In' : 'Explore Our Website';
 
       const msg = {
         to: email,
@@ -67,17 +70,19 @@ export class SimpleEmailService {
               </div>
 
               <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
-                Your first newsletter will arrive tomorrow at 8:00 AM. In the meantime, feel free to explore 
-                our website for the latest AI news and insights.
+                ${verifyLink
+                  ? 'Please confirm your subscription and sign in below - your first newsletter will arrive tomorrow at 8:00 AM.'
+                  : 'Your first newsletter will arrive tomorrow at 8:00 AM. In the meantime, feel free to explore our website for the latest AI news and insights.'}
               </p>
 
               <div style="text-align: center; margin: 30px 0;">
-                <a href="${process.env.NEXTAUTH_URL || 'http://localhost:3000'}" 
-                   style="background: #2563eb; color: #ffffff; padding: 12px 24px; border-radius: 6px; 
+                <a href="${ctaLink}"
+                   style="background: #2563eb; color: #ffffff; padding: 12px 24px; border-radius: 6px;
                           display: inline-block; font-weight: bold; text-decoration: none;">
-                  Explore Our Website
+                  ${ctaLabel}
                 </a>
               </div>
+              ${verifyLink ? '<p style="color: #9ca3af; font-size: 12px; text-align: center;">This link expires in 15 minutes and can only be used once.</p>' : ''}
             </div>
 
             <div style="text-align: center; color: #6b7280; font-size: 12px;">
@@ -93,6 +98,54 @@ export class SimpleEmailService {
       return true;
     } catch (error) {
       console.error('[SimpleEmail] Error sending welcome email:', error);
+      return false;
+    }
+  }
+
+  public async sendSignInEmail(toEmail: string, link: string, name?: string): Promise<boolean> {
+    const config = this.validateConfiguration();
+    if (!config.valid) {
+      console.error(`[SimpleEmailService] Failed to send sign-in email: ${config.error}`);
+      return false;
+    }
+
+    const msg = {
+      to: toEmail,
+      from: {
+        email: this.fromEmail,
+        name: this.fromName,
+      },
+      subject: 'Your YourAIbrief sign-in link',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2563eb; margin: 0;">🤖 YourAIbrief</h1>
+          </div>
+          <div style="background: #f8fafc; padding: 30px; border-radius: 10px;">
+            <h2 style="color: #1f2937; margin: 0 0 20px 0;">Hi ${name || 'there'},</h2>
+            <p style="color: #374151; line-height: 1.6;">
+              Click below to securely sign in to your YourAIbrief account.
+            </p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${link}" style="background: #2563eb; color: #ffffff; padding: 12px 24px;
+                      border-radius: 6px; display: inline-block; font-weight: bold; text-decoration: none;">
+                Sign in to YourAIbrief
+              </a>
+            </div>
+            <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+              This link expires in 15 minutes and can only be used once. If you didn't request this, you can safely ignore this email.
+            </p>
+          </div>
+        </div>
+      `,
+    };
+
+    try {
+      await sgMail.send(msg);
+      console.log(`[SimpleEmailService] Sign-in email sent to ${toEmail}`);
+      return true;
+    } catch (error: any) {
+      console.error(`[SimpleEmailService] Error sending sign-in email to ${toEmail}:`, error.response?.body || error);
       return false;
     }
   }

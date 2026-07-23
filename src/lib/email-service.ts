@@ -111,64 +111,6 @@ export class EmailService {
     }
   }
 
-  async sendConfirmationEmail(
-    email: string, 
-    userId: string, 
-    preferences?: { interests: string[]; preferredSendTime: string; frequency: string }
-  ): Promise<boolean> {
-    try {
-      const confirmationUrl = `${process.env.NEXTAUTH_URL}/api/auth/confirm?token=${userId}`;
-      
-      const msg = {
-        to: email,
-        from: {
-          email: this.fromEmail,
-          name: this.fromName,
-        },
-        subject: 'Confirm Your YourAIbrief Subscription 📧',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #2563eb; margin: 0;">🤖 YourAIbrief</h1>
-              <p style="color: #6b7280; margin: 10px 0;">Your Daily AI Intelligence</p>
-            </div>
-            
-            <div style="background: #f8fafc; padding: 30px; border-radius: 10px; margin-bottom: 20px;">
-              <h2 style="color: #1f2937; margin: 0 0 20px 0;">Confirm Your Subscription</h2>
-              <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
-                Thanks for signing up for our YourAIbrief! To complete your subscription and start receiving 
-                curated AI news, please confirm your email address by clicking the button below.
-              </p>
-              
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${confirmationUrl}" 
-                   style="background: #2563eb; color: white; padding: 12px 30px; text-decoration: none; 
-                          border-radius: 6px; display: inline-block; font-weight: bold;">
-                  Confirm Subscription
-                </a>
-              </div>
-              
-              <p style="color: #6b7280; font-size: 14px; margin: 0;">
-                Your preferences: ${preferences?.frequency || 'daily'} delivery at ${preferences?.preferredSendTime || '08:00'}
-              </p>
-            </div>
-            
-            <div style="text-align: center; color: #6b7280; font-size: 12px;">
-              <p>This link will expire in 24 hours.</p>
-              <p>If you didn't sign up for this newsletter, you can safely ignore this email.</p>
-            </div>
-          </div>
-        `,
-      };
-
-      await sgMail.send(msg);
-      return true;
-    } catch (error) {
-      console.error('Failed to send confirmation email:', error);
-      return false;
-    }
-  }
-
   async sendNewsletter(newsletter: Newsletter, users: User[]): Promise<{ success: number; failed: number }> {
     let success = 0;
     let failed = 0;

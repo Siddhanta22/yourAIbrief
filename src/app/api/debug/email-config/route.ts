@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/requireAdmin';
 
 export async function GET(request: NextRequest) {
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
+
   try {
     const config = {
       sendgridApiKey: process.env.SENDGRID_API_KEY ? 'Set' : 'Not set',

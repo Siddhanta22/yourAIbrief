@@ -2,11 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { EmailService } from '@/lib/email-service';
 import { ContentCurationService } from '@/lib/content-curation';
+import { requireAdmin } from '@/lib/requireAdmin';
 
 export const dynamic = 'force-dynamic';
 
 // This endpoint handles afternoon/evening users since Hobby plan only allows one cron per day
 export async function POST(request: NextRequest) {
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
+
   try {
     const { timeSlot = 'afternoon' } = await request.json();
     
