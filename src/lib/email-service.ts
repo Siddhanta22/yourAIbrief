@@ -222,12 +222,18 @@ export class EmailService {
   }
 
   private async personalizeNewsletter(newsletter: Newsletter, user: User): Promise<string> {
-    // TODO: Implement AI-powered personalization
-    // For now, return the standard newsletter content
-    return this.generateNewsletterHTML(newsletter);
+    return this.generateNewsletterHTML(newsletter, user);
   }
 
-  private generateNewsletterHTML(newsletter: Newsletter): string {
+  private generateNewsletterHTML(newsletter: Newsletter, user?: User): string {
+    const greetingName = user?.name || (user?.email ? user.email.split('@')[0] : 'there');
+    const frequency = (user?.preferences as any)?.frequency || 'daily';
+    const interests: string[] = (user?.preferences as any)?.interests || [];
+    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const unsubscribeUrl = user?.email
+      ? `${baseUrl}/unsubscribe?email=${encodeURIComponent(user.email)}`
+      : `${baseUrl}/unsubscribe`;
+
     let html = `
       <!DOCTYPE html>
       <html>
@@ -236,47 +242,65 @@ export class EmailService {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${newsletter.title}</title>
         <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #374151; margin: 0; padding: 0; }
           .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { text-align: center; margin-bottom: 30px; }
+          .header { text-align: center; margin-bottom: 20px; }
+          .header h2 { color: #2563eb; margin: 0; }
+          .header p { color: #6b7280; margin: 6px 0 0; }
+          .greeting { margin-bottom: 20px; }
+          .interests { font-size: 13px; color: #6b7280; margin: 8px 0 24px; }
+          .interests span { display: inline-block; background: #eff6ff; color: #2563eb; padding: 3px 10px; border-radius: 999px; margin: 2px 4px 2px 0; font-size: 12px; }
           .section { margin-bottom: 30px; }
-          .section-title { font-size: 24px; font-weight: bold; margin-bottom: 15px; color: #2563eb; }
-          .article { margin-bottom: 20px; padding: 15px; border-left: 4px solid #2563eb; background: #f8fafc; }
-          .article-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
-          .article-summary { color: #666; margin-bottom: 10px; }
-          .article-meta { font-size: 12px; color: #999; }
-          .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; }
-          .unsubscribe { font-size: 12px; color: #999; }
+          .section-title { font-size: 22px; font-weight: bold; margin-bottom: 4px; color: #1f2937; }
+          .section-description { color: #6b7280; font-size: 14px; margin-bottom: 15px; }
+          .article { margin-bottom: 16px; padding: 15px; border-left: 4px solid #2563eb; background: #f8fafc; border-radius: 0 8px 8px 0; }
+          .article-title { font-size: 17px; font-weight: bold; margin-bottom: 8px; }
+          .article-summary { color: #6b7280; margin-bottom: 8px; font-size: 14px; }
+          .article-meta { font-size: 12px; color: #9ca3af; }
+          .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #9ca3af; font-size: 12px; }
+          .footer a { color: #6b7280; }
         </style>
       </head>
       <body>
         <div class="container">
           <div class="header">
-            <h1>${newsletter.title}</h1>
+            <h2>🤖 YourAIbrief</h2>
+            <p>${newsletter.title}</p>
+          </div>
+
+          <div class="greeting">
+            <p>Hi ${greetingName},</p>
             ${newsletter.summary ? `<p>${newsletter.summary}</p>` : ''}
           </div>
+
+          ${interests.length > 0 ? `
+          <div class="interests">
+            Curated for your interests:
+            ${interests.map(i => `<span>${i}</span>`).join('')}
+          </div>
+          ` : ''}
     `;
 
     // Add sections
     for (const section of newsletter.sections) {
       html += `
         <div class="section">
-          <h2 class="section-title">${section.title}</h2>
-          ${section.description ? `<p>${section.description}</p>` : ''}
+          <div class="section-title">${section.title}</div>
+          ${section.description ? `<div class="section-description">${section.description}</div>` : ''}
       `;
 
       // Add articles
       for (const article of section.articles) {
         html += `
           <div class="article">
-            <h3 class="article-title">
+            <div class="article-title">
               <a href="${article.url}" style="color: #2563eb; text-decoration: none;">
                 ${article.title}
               </a>
-            </h3>
+            </div>
             <p class="article-summary">${article.summary}</p>
             <div class="article-meta">
-              Source: ${article.source} • ${new Date(article.publishedAt).toLocaleDateString()}
+              ${article.source} • ${new Date(article.publishedAt).toLocaleDateString()}
             </div>
           </div>
         `;
@@ -287,11 +311,8 @@ export class EmailService {
 
     html += `
           <div class="footer">
-            <p>Stay ahead with AI intelligence delivered to your inbox.</p>
-            <p class="unsubscribe">
-              <a href="{{unsubscribe_url}}">Unsubscribe</a> • 
-              <a href="{{view_online_url}}">View online</a>
-            </p>
+            <p>You're receiving this because you subscribed to YourAIbrief for ${frequency} delivery.</p>
+            <p><a href="${unsubscribeUrl}">Unsubscribe</a></p>
           </div>
         </div>
       </body>

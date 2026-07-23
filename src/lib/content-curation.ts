@@ -66,6 +66,7 @@ const SOURCE_BLOCKLIST: string[] = [
   'Dealnews.com',
   'PyPI',
   'Pypi.org',
+  'Lawyersgunsmoneyblog.com',
   // Example: 'Some Spam Source', 'Clickbait News',
 ];
 
@@ -158,7 +159,18 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
     while (filtered.length < page * pageSize && rawPage <= MAX_RAW_PAGES && !reachedEnd) {
       const params = buildParams(rawPage);
       console.log('[NewsAPI] Request params:', params);
-      const res = await axios.get(NEWS_API_URL, { params });
+      let res;
+      try {
+        res = await axios.get(NEWS_API_URL, { params });
+      } catch (pageError: any) {
+        // A single failed page (rate limit, transient network blip, etc.) shouldn't
+        // take down the whole request - use whatever was already accumulated instead
+        // of throwing all the way up to the caller (cron/send-now would otherwise
+        // fail the entire send for a user over what's often a transient hiccup).
+        console.error(`[NewsAPI] Page ${rawPage} request failed, stopping accumulation:`, pageError?.response?.status || pageError?.message);
+        reachedEnd = true;
+        break;
+      }
       console.log(`[NewsAPI] Response status: ${res.status}`);
       console.log(`[NewsAPI] Total results from API: ${res.data?.totalResults || 0}`);
       console.log(`[NewsAPI] Articles in response: ${res.data?.articles?.length || 0}`);
@@ -206,7 +218,13 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
     // If still short for this page, keep fetching a bit more to try to fill it
     while (!reachedEnd && filtered.length < page * pageSize && rawPage <= MAX_RAW_PAGES) {
       const params = buildParams(rawPage);
-      const res = await axios.get(NEWS_API_URL, { params });
+      let res;
+      try {
+        res = await axios.get(NEWS_API_URL, { params });
+      } catch (pageError: any) {
+        console.error(`[NewsAPI] Page ${rawPage} request failed, stopping accumulation:`, pageError?.response?.status || pageError?.message);
+        break;
+      }
       const raw = res.data?.articles || [];
       if (raw.length === 0) { reachedEnd = true; break; }
       const pageFiltered = raw
