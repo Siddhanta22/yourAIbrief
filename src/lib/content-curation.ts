@@ -109,14 +109,39 @@ function isAIArticle(article: any): boolean {
   return /\b(ai|artificial intelligence|machine learning|deep learning|llm|generative ai|neural network|openai|chatgpt|bard|deepmind|anthropic|gpt)\b/.test(text);
 }
 
+type FilteredArticle = NewsletterArticle & { category: string; categoryLabel: string };
+
+// In-memory cache so repeated page views (and repeated curateContent() calls from
+// cron/send-now/etc.) don't each re-query NewsAPI from scratch. NewsAPI's free tier
+// caps at 100 requests/day, and paginating without this could burn through that in
+// a handful of page views since each miss used to cost up to 10 upstream requests.
+// Not persistent across cold serverless starts, but covers the common case of
+// several page views / sends happening within the same warm instance.
+const NEWS_CACHE_TTL_MS = 15 * 60 * 1000;
+const newsCache = new Map<string, { articles: FilteredArticle[]; timestamp: number }>();
+
 async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pageSize: number = 12): Promise<{ articles: NewsletterArticle[], totalResults: number }> {
   console.log('[NewsAPI] fetchNewsFromNewsAPI called with topics:', topics, 'page:', page, 'pageSize:', pageSize);
   if (!NEWS_API_KEY) {
     console.error('NEWS_API_KEY is missing!');
     return { articles: [], totalResults: 0 };
   }
-  const RAW_PAGE_SIZE = 50; // overfetch to keep post-filter pages filled
-  const MAX_RAW_PAGES = 10; // safety cap
+
+  const cacheKey = JSON.stringify([...topics].sort());
+  const cached = newsCache.get(cacheKey);
+  const needed = page * pageSize;
+
+  if (cached && Date.now() - cached.timestamp < NEWS_CACHE_TTL_MS && cached.articles.length >= needed) {
+    console.log(`[NewsAPI] Cache hit for key "${cacheKey}" (${cached.articles.length} cached articles)`);
+    const start = (page - 1) * pageSize;
+    return {
+      articles: cached.articles.slice(start, start + pageSize),
+      totalResults: cached.articles.length,
+    };
+  }
+
+  const RAW_PAGE_SIZE = 100; // NewsAPI's documented max per request
+  const MAX_RAW_PAGES = 3; // cap worst-case requests per cache refresh (was 10)
 
   function buildParams(rawPage: number) {
     return {
@@ -131,7 +156,7 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
     };
   }
 
-  console.log('[NewsAPI] Using server-side filtered pagination. desired page:', page, 'size:', pageSize);
+  console.log(`[NewsAPI] Cache miss/stale for key "${cacheKey}" - refetching. desired page:`, page, 'size:', pageSize);
 
   try {
     function categorizeArticle(article: any): string {
@@ -151,12 +176,42 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
       if (/\b(ai|artificial intelligence|machine learning|openai|chatgpt|bard|llm|deepmind|anthropic|gpt)\b/.test(text)) return 'ai-news';
       return 'other';
     }
-    // Accumulate filtered articles until we can serve the requested filtered page
-    const filtered: any[] = [];
+    function filterPage(raw: any[]): FilteredArticle[] {
+      return raw
+        .filter((a: any) => a.urlToImage && typeof a.urlToImage === 'string' && a.urlToImage.trim() !== '')
+        .filter((a: any) => !SOURCE_BLOCKLIST.some(blocked => (a.source?.name || '').toLowerCase().includes(blocked.toLowerCase())))
+        .filter((a: any) => !KEYWORD_BLOCKLIST.some(rx => rx.test(`${a.title} ${a.description || ''}`)))
+        .filter((a: any) => isAIArticle(a))
+        .map((a: any) => {
+          const category = categorizeArticle(a);
+          // Hard block categories we don't want to surface at all
+          if (category === 'big-tech' || category === 'tools') {
+            return null;
+          }
+          return {
+            id: a.url,
+            title: a.title,
+            summary: a.description || a.content || '',
+            url: a.url,
+            source: a.source?.name || '',
+            publishedAt: a.publishedAt ? new Date(a.publishedAt) : new Date(),
+            tags: [],
+            relevance: 1,
+            category,
+            categoryLabel: CATEGORY_LABELS[category] || 'Other',
+            image: a.urlToImage,
+          } as FilteredArticle;
+        })
+        .filter((a: FilteredArticle | null): a is FilteredArticle => a !== null);
+    }
+
+    // Accumulate filtered articles across raw pages until we have enough to satisfy
+    // the requested page, or we run out of raw pages / hit a request failure.
+    const filtered: FilteredArticle[] = [];
     let rawPage = 1;
     let reachedEnd = false;
 
-    while (filtered.length < page * pageSize && rawPage <= MAX_RAW_PAGES && !reachedEnd) {
+    while (filtered.length < needed && rawPage <= MAX_RAW_PAGES && !reachedEnd) {
       const params = buildParams(rawPage);
       console.log('[NewsAPI] Request params:', params);
       let res;
@@ -168,7 +223,6 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
         // of throwing all the way up to the caller (cron/send-now would otherwise
         // fail the entire send for a user over what's often a transient hiccup).
         console.error(`[NewsAPI] Page ${rawPage} request failed, stopping accumulation:`, pageError?.response?.status || pageError?.message);
-        reachedEnd = true;
         break;
       }
       console.log(`[NewsAPI] Response status: ${res.status}`);
@@ -178,88 +232,11 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
       if (raw.length === 0) {
         console.log('[NewsAPI] No articles in this page, reached end');
         reachedEnd = true;
-      }
-
-      const pageFiltered = raw
-        .filter((a: any) => a.urlToImage && typeof a.urlToImage === 'string' && a.urlToImage.trim() !== '')
-        .filter((a: any) => !SOURCE_BLOCKLIST.some(blocked => (a.source?.name || '').toLowerCase().includes(blocked.toLowerCase())))
-        .filter((a: any) => !KEYWORD_BLOCKLIST.some(rx => rx.test(`${a.title} ${a.description || ''}`)))
-        .filter((a: any) => isAIArticle(a))
-        .map((a: any) => {
-          const category = categorizeArticle(a);
-          // Hard block categories we don't want to surface at all
-          if (category === 'big-tech' || category === 'tools') {
-            return null;
-          }
-          return {
-            id: a.url,
-            title: a.title,
-            summary: a.description || a.content || '',
-            url: a.url,
-            source: a.source?.name || '',
-            publishedAt: a.publishedAt ? new Date(a.publishedAt) : new Date(),
-            tags: [],
-            relevance: 1,
-            category,
-            categoryLabel: CATEGORY_LABELS[category] || 'Other',
-            image: a.urlToImage,
-          } as NewsletterArticle & { category: string; categoryLabel: string };
-        })
-        .filter(
-          (
-            a: (NewsletterArticle & { category: string; categoryLabel: string }) | null
-          ): a is NewsletterArticle & { category: string; categoryLabel: string } =>
-            a !== null
-        );
-      filtered.push(...pageFiltered);
-      rawPage += 1;
-    }
-
-    // If still short for this page, keep fetching a bit more to try to fill it
-    while (!reachedEnd && filtered.length < page * pageSize && rawPage <= MAX_RAW_PAGES) {
-      const params = buildParams(rawPage);
-      let res;
-      try {
-        res = await axios.get(NEWS_API_URL, { params });
-      } catch (pageError: any) {
-        console.error(`[NewsAPI] Page ${rawPage} request failed, stopping accumulation:`, pageError?.response?.status || pageError?.message);
         break;
       }
-      const raw = res.data?.articles || [];
-      if (raw.length === 0) { reachedEnd = true; break; }
-      const pageFiltered = raw
-        .filter((a: any) => a.urlToImage && typeof a.urlToImage === 'string' && a.urlToImage.trim() !== '')
-        .filter((a: any) => !SOURCE_BLOCKLIST.some(blocked => (a.source?.name || '').toLowerCase().includes(blocked.toLowerCase())))
-        .filter((a: any) => !KEYWORD_BLOCKLIST.some(rx => rx.test(`${a.title} ${a.description || ''}`)))
-        .filter((a: any) => isAIArticle(a))
-        .map((a: any) => {
-          const category = categorizeArticle(a);
-          // Hard block categories we don't want to surface at all
-          if (category === 'big-tech' || category === 'tools') {
-            return null;
-          }
-          return {
-            id: a.url,
-            title: a.title,
-            summary: a.description || a.content || '',
-            url: a.url,
-            source: a.source?.name || '',
-            publishedAt: a.publishedAt ? new Date(a.publishedAt) : new Date(),
-            tags: [],
-            relevance: 1,
-            category,
-            categoryLabel: CATEGORY_LABELS[category] || 'Other',
-            image: a.urlToImage,
-          } as NewsletterArticle & { category: string; categoryLabel: string };
-        })
-        .filter(
-          (
-            a: (NewsletterArticle & { category: string; categoryLabel: string }) | null
-          ): a is NewsletterArticle & { category: string; categoryLabel: string } =>
-            a !== null
-        );
-      filtered.push(...pageFiltered);
-      console.log(`[NewsAPI] After filtering page ${rawPage}: ${pageFiltered.length} articles passed filters, total filtered: ${filtered.length}`);
+
+      filtered.push(...filterPage(raw));
+      console.log(`[NewsAPI] After filtering page ${rawPage}: total filtered so far: ${filtered.length}`);
       rawPage += 1;
     }
 
@@ -273,6 +250,8 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
       const bWhitelisted = isSourceWhitelisted(b.source) ? 0 : 1;
       return aWhitelisted - bWhitelisted;
     });
+
+    newsCache.set(cacheKey, { articles: filtered, timestamp: Date.now() });
 
     const start = (page - 1) * pageSize;
     const end = start + pageSize;
