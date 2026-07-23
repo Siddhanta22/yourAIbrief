@@ -62,6 +62,10 @@ const SOURCE_BLOCKLIST: string[] = [
   'American Banking News',
   'PYMNTS',
   'Poynter',
+  // Deal aggregators and non-editorial noise
+  'Dealnews.com',
+  'PyPI',
+  'Pypi.org',
   // Example: 'Some Spam Source', 'Clickbait News',
 ];
 
@@ -86,6 +90,9 @@ const KEYWORD_BLOCKLIST: RegExp[] = [
   /\bdiscount code\b/i,
   /\breg\.?\s*\$\d/i,
   /\d+%\s*off\b/i,
+  /\$\d+\s*off\b/i,
+  /\bfree shipping\b/i,
+  /\bbuy now\b/i,
 ];
 
 // Helper for case-insensitive, partial source matching
@@ -237,6 +244,17 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
       console.log(`[NewsAPI] After filtering page ${rawPage}: ${pageFiltered.length} articles passed filters, total filtered: ${filtered.length}`);
       rawPage += 1;
     }
+
+    // Prefer reputable whitelisted sources without risking zero results: a hard
+    // whitelist filter here starved the preview entirely (NewsAPI's /everything
+    // search returns mostly non-whitelisted sources), so instead stable-sort
+    // whitelisted articles first and let non-whitelisted (still blocklist/keyword/
+    // AI-topic filtered) ones fill in only when whitelisted supply runs thin.
+    filtered.sort((a, b) => {
+      const aWhitelisted = isSourceWhitelisted(a.source) ? 0 : 1;
+      const bWhitelisted = isSourceWhitelisted(b.source) ? 0 : 1;
+      return aWhitelisted - bWhitelisted;
+    });
 
     const start = (page - 1) * pageSize;
     const end = start + pageSize;
