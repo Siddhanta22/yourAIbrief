@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { User, Mail, Clock, Settings, CalendarDays, Send } from 'lucide-react';
+import { User, Clock, Settings, CalendarDays, Send } from 'lucide-react';
+import { Logo } from '@/components/ui/Logo';
 
 type SessionUserWithId = {
   id?: string;
@@ -103,7 +104,7 @@ export default function DashboardPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-center items-center h-16">
             <div className="flex items-center">
-              <Mail className="w-8 h-8 text-blue-600 dark:text-primary-400 mr-3" />
+              <Logo className="w-8 h-8 mr-3" />
               <h1 className="text-xl font-bold text-gray-900 dark:text-neutral-100">YourAIbrief Dashboard</h1>
             </div>
           </div>

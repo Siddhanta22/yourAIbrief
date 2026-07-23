@@ -3,6 +3,7 @@
 import React from 'react';
 import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
+import { Logo } from '@/components/ui/Logo';
 
 export default function SignInClient() {
   const searchParams = useSearchParams();
@@ -11,7 +12,8 @@ export default function SignInClient() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-100 dark:from-neutral-900 dark:via-neutral-800 dark:to-neutral-900">
       <div className="w-full max-w-md mx-auto bg-white dark:bg-neutral-900 rounded-xl shadow-lg p-8 flex flex-col items-center">
-        <div className="mb  -6 flex flex-col items-center">
+        <div className="mb-6 flex flex-col items-center">
+          <Logo className="w-12 h-12 mb-4" />
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-1">
             Welcome to YourAIbrief
           </h1>

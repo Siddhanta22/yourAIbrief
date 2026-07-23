@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Mail, Github, Twitter, Linkedin } from 'lucide-react';
+import { Mail, Github, Twitter } from 'lucide-react';
+import { Logo } from '@/components/ui/Logo';
 
 export function Footer() {
   return (
@@ -11,7 +12,7 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
-              <Mail className="w-8 h-8 text-primary-600" />
+              <Logo className="w-8 h-8" />
               <span className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
                 YourAIbrief
               </span>

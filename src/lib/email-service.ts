@@ -264,7 +264,7 @@ export class EmailService {
       <body>
         <div class="container">
           <div class="header">
-            <h2>🤖 YourAIbrief</h2>
+            <h2 style="color: #0284c7; margin: 0; letter-spacing: -0.5px;">YourAIbrief</h2>
             <p>${newsletter.title}</p>
           </div>
 

@@ -3,16 +3,16 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { 
-  Menu, 
-  X, 
-  Mail, 
-  BarChart3, 
-  Settings, 
+import {
+  Menu,
+  X,
+  BarChart3,
+  Settings,
   User,
   Moon,
   Sun
 } from 'lucide-react';
+import { Logo } from '@/components/ui/Logo';
 import { useTheme } from 'next-themes';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -90,8 +90,8 @@ export function Navigation() {
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center"
           >
-            <Link href="/" className="flex items-center space-x-1 sm:space-x-2">
-              <Mail className="w-6 h-6 sm:w-8 sm:h-8 text-primary-600" />
+            <Link href="/" className="flex items-center space-x-2">
+              <Logo className="w-7 h-7 sm:w-8 sm:h-8" />
               <span className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-neutral-100">
                 YourAIbrief
               </span>
@@ -280,7 +280,7 @@ export function Navigation() {
           isOpen={showPrefs}
           onClose={() => setShowPrefs(false)}
           initialFrequency={(prefData.frequency as any) || 'daily'}
-          initialTime={prefData.preferredSendTime || '08:00 AM'}
+          initialTime={prefData.preferredSendTime || '08:00'}
           initialTopics={prefData.topics || []}
           onSave={async ({ frequency, preferredSendTime, topics }) => {
             // Use session-based auth - no need to pass email

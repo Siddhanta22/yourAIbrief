@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { X, Clock, Calendar } from 'lucide-react';
 
 interface PreferencesModalProps {
@@ -8,12 +8,12 @@ interface PreferencesModalProps {
   onClose: () => void;
   initialName?: string;
   initialFrequency?: 'daily' | 'weekly' | 'monthly';
-  initialTime?: string; // e.g., "08:00 AM"
+  initialTime?: string; // 24-hour "HH:MM", e.g. "08:00"
   initialTopics?: string[];
   onSave: (values: { name?: string; frequency: 'daily' | 'weekly' | 'monthly'; preferredSendTime: string; topics: string[] }) => Promise<void> | void;
 }
 
-export function PreferencesModal({ isOpen, onClose, initialName = '', initialFrequency = 'daily', initialTime = '08:00 AM', initialTopics = [], onSave }: PreferencesModalProps) {
+export function PreferencesModal({ isOpen, onClose, initialName = '', initialFrequency = 'daily', initialTime = '08:00', initialTopics = [], onSave }: PreferencesModalProps) {
   const [name, setName] = useState<string>(initialName);
   const [frequency, setFrequency] = useState<'daily' | 'weekly' | 'monthly'>(initialFrequency);
   const [timeOfDay, setTimeOfDay] = useState<string>(initialTime);
@@ -28,19 +28,6 @@ export function PreferencesModal({ isOpen, onClose, initialName = '', initialFre
       setTopics(initialTopics);
     }
   }, [isOpen, initialName, initialFrequency, initialTime, initialTopics]);
-
-  const timeOptions = useMemo(() => {
-    const options: string[] = [];
-    for (let h = 0; h < 24; h++) {
-      for (let m = 0; m < 60; m += 30) {
-        const hour = ((h % 12) || 12).toString().padStart(2, '0');
-        const minute = m === 0 ? '00' : '30';
-        const ampm = h < 12 ? 'AM' : 'PM';
-        options.push(`${hour}:${minute} ${ampm}`);
-      }
-    }
-    return options;
-  }, []);
 
   if (!isOpen) return null;
 
@@ -83,12 +70,13 @@ export function PreferencesModal({ isOpen, onClose, initialName = '', initialFre
             <div>
               <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">Preferred Delivery Time</label>
               <div className="relative">
-                <Clock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
-                <select className="input-field pl-9" value={timeOfDay} onChange={e => setTimeOfDay(e.target.value)}>
-                  {timeOptions.map(t => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
+                <Clock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 z-10" />
+                <input
+                  type="time"
+                  className="input-field pl-9"
+                  value={timeOfDay}
+                  onChange={e => setTimeOfDay(e.target.value)}
+                />
               </div>
             </div>
 

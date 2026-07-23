@@ -61,7 +61,7 @@ export class SimpleEmailService {
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #2563eb; margin: 0;">🤖 YourAIbrief</h1>
+              <h1 style="color: #0284c7; margin: 0; letter-spacing: -0.5px; font-size: 22px;">YourAIbrief</h1>
               <p style="color: #6b7280; margin: 10px 0;">Your Daily AI Intelligence</p>
             </div>
 
@@ -128,7 +128,7 @@ export class SimpleEmailService {
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #2563eb; margin: 0;">🤖 YourAIbrief</h1>
+              <h1 style="color: #0284c7; margin: 0; letter-spacing: -0.5px; font-size: 22px;">YourAIbrief</h1>
             </div>
             <div style="background: #f8fafc; padding: 30px; border-radius: 10px;">
               <h2 style="color: #1f2937; margin: 0 0 20px 0;">Hi ${name || 'there'},</h2>
@@ -244,7 +244,7 @@ export class SimpleEmailService {
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
               <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="color: #2563eb; margin: 0;">🤖 YourAIbrief</h1>
+                <h1 style="color: #0284c7; margin: 0; letter-spacing: -0.5px; font-size: 22px;">YourAIbrief</h1>
               </div>
               <div style="background: #f8fafc; padding: 30px; border-radius: 10px;">
                 <h2 style="color: #1f2937; margin: 0 0 20px 0;">Thank you for contacting us!</h2>
