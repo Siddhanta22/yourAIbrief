@@ -141,7 +141,10 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
   }
 
   const RAW_PAGE_SIZE = 100; // NewsAPI's documented max per request
-  const MAX_RAW_PAGES = 3; // cap worst-case requests per cache refresh (was 10)
+  // Scans up to 500 raw articles (5 requests of NewsAPI's max page size, 100) per
+  // cache refresh to surface enough matches for several pages - safe to go this deep
+  // now that it only costs requests once per NEWS_CACHE_TTL_MS window, not per page view.
+  const MAX_RAW_PAGES = 5;
 
   function buildParams(rawPage: number) {
     return {
@@ -211,7 +214,10 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
     let rawPage = 1;
     let reachedEnd = false;
 
-    while (filtered.length < needed && rawPage <= MAX_RAW_PAGES && !reachedEnd) {
+    // Always scan the full raw-page budget on a refresh (not just until `needed`
+    // is met) so the cache ends up generously filled and serves several
+    // subsequent page requests without triggering another refetch.
+    while (rawPage <= MAX_RAW_PAGES && !reachedEnd) {
       const params = buildParams(rawPage);
       console.log('[NewsAPI] Request params:', params);
       let res;
