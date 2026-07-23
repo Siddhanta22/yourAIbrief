@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { EmailService } from '@/lib/email-service';
 import { ContentCurationService } from '@/lib/content-curation';
 import { requireAdmin } from '@/lib/requireAdmin';
+import { parsePreferredHour } from '@/lib/deliveryTime';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,17 +39,8 @@ export async function POST(request: NextRequest) {
     const afternoonUsers = users.filter(user => {
       if (!user.preferredSendTime) return false;
       
-      const userTime = user.preferredSendTime;
-      const userTimeMatch = userTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-      if (!userTimeMatch) return false;
-
-      const [, userHour, userMinute, userAmPm] = userTimeMatch;
-      let userHour24 = parseInt(userHour);
-      if (userAmPm.toUpperCase() === 'PM' && userHour24 !== 12) {
-        userHour24 += 12;
-      } else if (userAmPm.toUpperCase() === 'AM' && userHour24 === 12) {
-        userHour24 = 0;
-      }
+      const userHour24 = parsePreferredHour(user.preferredSendTime);
+      if (userHour24 === null) return false;
 
       // Afternoon/evening window: 12 PM - 11 PM
       const isAfternoonTime = userHour24 >= 12 || userHour24 <= 23;

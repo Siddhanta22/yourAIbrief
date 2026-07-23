@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { EmailService } from '@/lib/email-service';
 import { ContentCurationService } from '@/lib/content-curation';
+import { parsePreferredHour } from '@/lib/deliveryTime';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,19 +45,11 @@ function isUserDueNow(user: any, now: Date): { isDue: boolean; reason: string } 
   const prefs = parseUserPreferences(user.preferences);
   const frequency = (prefs.frequency || 'daily') as 'daily'|'weekly'|'monthly';
 
-  // Extract hour and minute from user time (e.g., "08:30 AM")
+  // Extract hour from user time (stored as 24-hour "HH:MM", e.g. "08:30")
   const userTime = user.preferredSendTime;
-  const userTimeMatch = userTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-  if (!userTimeMatch) {
+  const userHour24 = parsePreferredHour(userTime);
+  if (userHour24 === null) {
     return { isDue: false, reason: 'Invalid time format' };
-  }
-
-  const [, userHour, userMinute, userAmPm] = userTimeMatch;
-  let userHour24 = parseInt(userHour);
-  if (userAmPm.toUpperCase() === 'PM' && userHour24 !== 12) {
-    userHour24 += 12;
-  } else if (userAmPm.toUpperCase() === 'AM' && userHour24 === 12) {
-    userHour24 = 0;
   }
 
   // Support 24/7 delivery for any user preference time

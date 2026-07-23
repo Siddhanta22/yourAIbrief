@@ -71,26 +71,7 @@ export function HeroSection() {
       // User doesn't exist - proceed with registration
       console.log('New user, proceeding with registration');
       
-      // Convert time format from "08:00 AM" to "08:00" (24-hour format)
-      let time24 = '08:00';
-      if (deliveryPreferences?.timeOfDay) {
-        const timeStr = deliveryPreferences.timeOfDay;
-        const match = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-        if (match) {
-          let hours = parseInt(match[1]);
-          const minutes = match[2];
-          const ampm = match[3].toUpperCase();
-          
-          if (ampm === 'PM' && hours !== 12) {
-            hours += 12;
-          } else if (ampm === 'AM' && hours === 12) {
-            hours = 0;
-          }
-          
-          time24 = `${hours.toString().padStart(2, '0')}:${minutes}`;
-        }
-      }
-      
+      // The time input already gives 24-hour "HH:MM" directly - no conversion needed.
       const res = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -98,7 +79,7 @@ export function HeroSection() {
           name,
           email,
           interests,
-          preferredSendTime: time24,
+          preferredSendTime: deliveryPreferences?.timeOfDay || '08:00',
           frequency: deliveryPreferences?.frequency || 'daily',
         }),
       });

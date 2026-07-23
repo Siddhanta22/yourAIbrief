@@ -37,7 +37,7 @@ export function SubscriptionForm({ onSubmit, isSubmitting = false }: Subscriptio
   const [frequency, setFrequency] = useState('daily');
   const [dayOfWeek, setDayOfWeek] = useState('Monday');
   const [dayOfMonth, setDayOfMonth] = useState('1');
-  const [timeOfDay, setTimeOfDay] = useState('08:00 AM');
+  const [timeOfDay, setTimeOfDay] = useState('08:00');
   const [showCheckEmail, setShowCheckEmail] = useState(false);
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
@@ -118,16 +118,6 @@ export function SubscriptionForm({ onSubmit, isSubmitting = false }: Subscriptio
 
     onSubmit(name, email, selectedInterests, deliveryPreferences);
   };
-
-  const timeOptions = [];
-  for (let h = 0; h < 24; h++) {
-    for (let m = 0; m < 60; m += 30) {
-      const hour = ((h % 12) || 12).toString().padStart(2, '0');
-      const minute = m === 0 ? '00' : '30';
-      const ampm = h < 12 ? 'AM' : 'PM';
-      timeOptions.push(`${hour}:${minute} ${ampm}`);
-    }
-  }
 
   return (
     <div className="w-full max-w-md">
@@ -306,16 +296,13 @@ export function SubscriptionForm({ onSubmit, isSubmitting = false }: Subscriptio
             )}
             <div>
               <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">Preferred Delivery Time</label>
-              <select
+              <input
+                type="time"
                 className="input-field"
                 required
                 value={timeOfDay}
                 onChange={e => setTimeOfDay(e.target.value)}
-              >
-                {timeOptions.map(time => (
-                  <option key={time} value={time}>{time}</option>
-                ))}
-              </select>
+              />
             </div>
             <button
               type="submit"

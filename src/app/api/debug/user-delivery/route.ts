@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/requireAdmin';
+import { parsePreferredHour } from '@/lib/deliveryTime';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,22 +57,15 @@ export async function GET(request: NextRequest) {
     
     // Check time matching logic
     let timeMatch = null;
-    let userHour24 = null;
+    let userHour24: number | null = null;
     if (userTime) {
-      const userTimeMatch = userTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-      if (userTimeMatch) {
-        const [, userHour, userMinute, userAmPm] = userTimeMatch;
-        userHour24 = parseInt(userHour);
-        if (userAmPm.toUpperCase() === 'PM' && userHour24 !== 12) {
-          userHour24 += 12;
-        } else if (userAmPm.toUpperCase() === 'AM' && userHour24 === 12) {
-          userHour24 = 0;
-        }
+      userHour24 = parsePreferredHour(userTime);
+      if (userHour24 !== null) {
         const currentHour = now.getHours();
         const currentMinute = now.getMinutes();
         const timeDifference = Math.abs(currentHour - userHour24);
         const isTimeMatch = timeDifference === 0 || (timeDifference === 1 && currentMinute < 30);
-        
+
         timeMatch = {
           original: userTime,
           hour24: userHour24,
