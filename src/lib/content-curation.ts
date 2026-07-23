@@ -37,7 +37,7 @@ const SOURCE_WHITELIST = [
   // Global/Emerging Market
   'Rest of World', 'Analytics Vidhya', 'SyncedReview',
   // Previously added sources
-  'SiliconANGLE News', 'Just Jared', 'Biztoc.com', 'Raw Story', 'The Conversation Africa', 'The Drum', 'NBC News', 'Digital Journal', 'The Times of India', 'Malwarebytes.com',
+  'SiliconANGLE News', 'Biztoc.com', 'Raw Story', 'The Conversation Africa', 'The Drum', 'NBC News', 'Digital Journal', 'The Times of India', 'Malwarebytes.com',
 ];
 
 // Blocklist of sources to exclude (add to this as you find spam/ads)
@@ -79,6 +79,13 @@ const KEYWORD_BLOCKLIST: RegExp[] = [
   /\bDow Jones\b/i,
   /\bpress release\b/i,
   /\bquarterly results\b/i,
+  // Deal listicles / promotional content (e.g. "(PR) ...", "up to 93% off", "Reg. $97")
+  /^\(PR\)/i,
+  /\bsponsored\b/i,
+  /\bpromo code\b/i,
+  /\bdiscount code\b/i,
+  /\breg\.?\s*\$\d/i,
+  /\d+%\s*off\b/i,
 ];
 
 // Helper for case-insensitive, partial source matching
@@ -156,6 +163,7 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
 
       const pageFiltered = raw
         .filter((a: any) => a.urlToImage && typeof a.urlToImage === 'string' && a.urlToImage.trim() !== '')
+        .filter((a: any) => isSourceWhitelisted(a.source?.name || ''))
         .filter((a: any) => !SOURCE_BLOCKLIST.some(blocked => (a.source?.name || '').toLowerCase().includes(blocked.toLowerCase())))
         .filter((a: any) => !KEYWORD_BLOCKLIST.some(rx => rx.test(`${a.title} ${a.description || ''}`)))
         .filter((a: any) => isAIArticle(a))
@@ -197,6 +205,7 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
       if (raw.length === 0) { reachedEnd = true; break; }
       const pageFiltered = raw
         .filter((a: any) => a.urlToImage && typeof a.urlToImage === 'string' && a.urlToImage.trim() !== '')
+        .filter((a: any) => isSourceWhitelisted(a.source?.name || ''))
         .filter((a: any) => !SOURCE_BLOCKLIST.some(blocked => (a.source?.name || '').toLowerCase().includes(blocked.toLowerCase())))
         .filter((a: any) => !KEYWORD_BLOCKLIST.some(rx => rx.test(`${a.title} ${a.description || ''}`)))
         .filter((a: any) => isAIArticle(a))
@@ -350,11 +359,11 @@ export class ContentCurationService {
       }
     }
 
-    // 2. What’s Popping in AI? section (broader, fun/miscellaneous, but still AI-related and not blocklisted)
+    // 2. What’s Popping in AI? section (broader, fun/miscellaneous, but still from whitelisted sources)
     const poppingArticles = allArticles.articles
       .filter(article =>
+        isSourceWhitelisted(article.source) &&
         isAIArticle(article) &&
-        !SOURCE_BLOCKLIST.some(blocked => (article.source || '').toLowerCase().includes(blocked.toLowerCase())) &&
         (now.getTime() - new Date(article.publishedAt).getTime() < 7 * 24 * 60 * 60 * 1000) // last 7 days
       )
       .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())

@@ -10,14 +10,14 @@ export function CTASection() {
           Ready to Stay Ahead in AI?
         </h2>
         <p className="text-xl text-primary-100 mb-8 max-w-2xl mx-auto">
-          Join thousands of AI professionals who get their daily intelligence fix from our curated newsletter.
+          Join AI professionals who get their daily intelligence fix from our curated newsletter.
         </p>
-        
+
         <div className="flex justify-center">
-          <button className="btn-ghost text-white border-white hover:bg-white/10">
-            Learn More
+          <a href="#subscribe" className="btn-ghost text-white border-white hover:bg-white/10">
+            Get Started
             <ArrowRight className="w-4 h-4 ml-2" />
-          </button>
+          </a>
         </div>
         
         <p className="text-sm text-primary-200 mt-6">

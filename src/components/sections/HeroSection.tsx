@@ -40,11 +40,7 @@ export function HeroSection() {
       
       // First, check if email exists
       console.log('Checking if email exists:', email);
-      const checkResponse = await fetch('/api/auth/check-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
+      const checkResponse = await fetch(`/api/user/exists?email=${encodeURIComponent(email)}`);
 
       if (!checkResponse.ok) {
         console.error('Check email failed:', checkResponse.status);
@@ -53,7 +49,7 @@ export function HeroSection() {
         const checkData = await checkResponse.json();
         console.log('Email check response:', checkData);
 
-        if (checkData.success && checkData.userExists) {
+        if (checkData.exists) {
           // User exists - send a one-time sign-in link instead of creating a
           // session directly (typing an email alone is not proof of ownership)
           console.log('User exists, sending sign-in link');
