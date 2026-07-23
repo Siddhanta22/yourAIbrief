@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Menu,
   X,
@@ -126,13 +126,33 @@ export function Navigation() {
             {/* Theme Toggle */}
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors duration-200"
+              className="relative p-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors duration-200 overflow-hidden"
             >
-              {mounted && theme === 'dark' ? (
-                <Sun className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
-              ) : (
-                <Moon className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
-              )}
+              <AnimatePresence mode="wait" initial={false}>
+                {mounted && theme === 'dark' ? (
+                  <motion.span
+                    key="sun"
+                    initial={{ rotate: -90, opacity: 0 }}
+                    animate={{ rotate: 0, opacity: 1 }}
+                    exit={{ rotate: 90, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="block"
+                  >
+                    <Sun className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
+                  </motion.span>
+                ) : (
+                  <motion.span
+                    key="moon"
+                    initial={{ rotate: 90, opacity: 0 }}
+                    animate={{ rotate: 0, opacity: 1 }}
+                    exit={{ rotate: -90, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="block"
+                  >
+                    <Moon className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </button>
 
             {/* User Menu */}

@@ -1,8 +1,28 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Check } from 'lucide-react';
+
+function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
+  return (
+    <div className="flex items-center justify-center gap-2 mb-4">
+      {[1, 2, 3].map((s) => (
+        <div
+          key={s}
+          className={`h-1.5 rounded-full transition-all duration-300 ${
+            s === step
+              ? 'w-6 bg-primary-600'
+              : s < step
+              ? 'w-1.5 bg-primary-400'
+              : 'w-1.5 bg-neutral-200 dark:bg-neutral-700'
+          }`}
+        />
+      ))}
+      <span className="ml-2 text-xs text-neutral-500 dark:text-neutral-400">Step {step} of 3</span>
+    </div>
+  );
+}
 
 interface SubscriptionFormProps {
   onSubmit: (
@@ -121,10 +141,14 @@ export function SubscriptionForm({ onSubmit, isSubmitting = false }: Subscriptio
 
   return (
     <div className="w-full max-w-md">
+      <AnimatePresence mode="wait">
       {showCheckEmail ? (
         <motion.div
+          key="check-email"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -12 }}
+          transition={{ duration: 0.25 }}
           className="text-center space-y-3"
         >
           <Mail className="w-10 h-10 text-primary-600 mx-auto" />
@@ -144,11 +168,15 @@ export function SubscriptionForm({ onSubmit, isSubmitting = false }: Subscriptio
         </motion.div>
       ) : !showInterests ? (
         <motion.form
+          key="step-email"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -12 }}
+          transition={{ duration: 0.25 }}
           onSubmit={handleEmailSubmit}
           className="space-y-4"
         >
+          <StepIndicator step={1} />
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-5 h-5" />
             <input
@@ -170,10 +198,14 @@ export function SubscriptionForm({ onSubmit, isSubmitting = false }: Subscriptio
         </motion.form>
       ) : !showPreferences ? (
         <motion.div
+          key="step-interests"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -12 }}
+          transition={{ duration: 0.25 }}
           className="space-y-4"
         >
+          <StepIndicator step={2} />
           <div className="text-center">
             <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
               What interests you most?
@@ -217,9 +249,18 @@ export function SubscriptionForm({ onSubmit, isSubmitting = false }: Subscriptio
                     <span className="text-lg">{interest.icon}</span>
                     <span className="text-sm font-medium">{interest.label}</span>
                   </div>
-                  {selectedInterests.includes(interest.id) && (
-                    <Check className="w-4 h-4 text-primary-600" />
-                  )}
+                  <AnimatePresence>
+                    {selectedInterests.includes(interest.id) && (
+                      <motion.span
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                      >
+                        <Check className="w-4 h-4 text-primary-600" />
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
                 </div>
               </button>
             ))}
@@ -244,10 +285,14 @@ export function SubscriptionForm({ onSubmit, isSubmitting = false }: Subscriptio
         </motion.div>
       ) : (
         <motion.div
+          key="step-preferences"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -12 }}
+          transition={{ duration: 0.25 }}
           className="space-y-4"
         >
+          <StepIndicator step={3} />
           <div className="text-center">
             <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
               When do you want to receive your AI Brief?
@@ -328,6 +373,7 @@ export function SubscriptionForm({ onSubmit, isSubmitting = false }: Subscriptio
           </form>
         </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 } 

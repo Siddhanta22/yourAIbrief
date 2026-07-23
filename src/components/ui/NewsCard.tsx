@@ -13,7 +13,7 @@ export function NewsCard({ article, className = '' }: NewsCardProps) {
       href={(article as any).url || '#'}
       target="_blank"
       rel="noopener noreferrer"
-      className={`group rounded-xl overflow-hidden bg-neutral-50 dark:bg-neutral-700 hover:shadow-lg transition-shadow ${className}`}
+      className={`group rounded-xl overflow-hidden bg-neutral-50 dark:bg-neutral-700 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 ${className}`}
     >
       {Boolean((article as any).image) && (
         <div className="h-40 bg-neutral-200 dark:bg-neutral-600 overflow-hidden">
