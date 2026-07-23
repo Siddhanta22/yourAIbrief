@@ -40,7 +40,15 @@ export async function POST(request: NextRequest) {
     const link = buildVerifyLink(normalizedEmail, token, baseUrl);
 
     const emailService = new SimpleEmailService();
-    await emailService.sendSignInEmail(normalizedEmail, link, user.name || undefined);
+    const sent = await emailService.sendSignInEmail(normalizedEmail, link, user.name || undefined);
+
+    if (!sent) {
+      console.error(`[Request Signin] Failed to send sign-in email to ${normalizedEmail}`);
+      return NextResponse.json(
+        { success: false, message: 'Failed to send sign-in email. Please try again later.' },
+        { status: 502, headers: CORS_HEADERS }
+      );
+    }
 
     return NextResponse.json(
       { success: true, message: 'Check your email for a sign-in link.' },

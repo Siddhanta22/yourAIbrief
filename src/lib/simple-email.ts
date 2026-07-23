@@ -1,48 +1,62 @@
-import sgMail from '@sendgrid/mail';
+import { Resend } from 'resend';
 
 export class SimpleEmailService {
   private apiKey: string;
   private fromEmail: string;
   private fromName: string;
+  private resend: Resend | null;
 
   constructor() {
-    this.apiKey = process.env.SENDGRID_API_KEY || '';
-    this.fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@ai-newsletter.com';
-    this.fromName = process.env.SENDGRID_FROM_NAME || 'YourAIbrief';
-    
-    if (this.apiKey) {
-      sgMail.setApiKey(this.apiKey);
-    }
+    this.apiKey = process.env.RESEND_API_KEY || '';
+    this.fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+    this.fromName = process.env.RESEND_FROM_NAME || 'YourAIbrief';
+    this.resend = this.apiKey ? new Resend(this.apiKey) : null;
+  }
+
+  private get from(): string {
+    return `${this.fromName} <${this.fromEmail}>`;
   }
 
   private validateConfiguration(): { valid: boolean; error?: string } {
-    if (!this.apiKey) {
-      return { valid: false, error: 'SendGrid API key not configured' };
+    if (!this.apiKey || !this.resend) {
+      return { valid: false, error: 'Resend API key not configured' };
     }
-    
+
     if (!this.fromEmail || !this.fromName) {
       return { valid: false, error: 'From email or name not configured' };
     }
-    
+
     return { valid: true };
+  }
+
+  private async send(msg: { to: string; subject: string; html: string; replyTo?: string }): Promise<void> {
+    if (!this.resend) {
+      throw new Error('Resend API key not configured');
+    }
+    const { error } = await this.resend.emails.send({
+      from: this.from,
+      to: msg.to,
+      subject: msg.subject,
+      html: msg.html,
+      replyTo: msg.replyTo,
+    });
+    if (error) {
+      throw error;
+    }
   }
 
   async sendWelcomeEmail(email: string, name?: string, verifyLink?: string): Promise<boolean> {
     try {
       if (!this.apiKey) {
-        console.log('[SimpleEmail] No SendGrid API key, skipping email send');
+        console.log('[SimpleEmail] No Resend API key, skipping email send');
         return true; // Return true for development
       }
 
       const ctaLink = verifyLink || process.env.NEXTAUTH_URL || 'http://localhost:3000';
       const ctaLabel = verifyLink ? 'Confirm & Sign In' : 'Explore Our Website';
 
-      const msg = {
+      await this.send({
         to: email,
-        from: {
-          email: this.fromEmail,
-          name: this.fromName,
-        },
         subject: 'Welcome to YourAIbrief! 🎉',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -55,7 +69,7 @@ export class SimpleEmailService {
               <h2 style="color: #1f2937; margin: 0 0 20px 0;">Welcome to the YourAIbrief! 🎉</h2>
               <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
                 Hi ${name || 'there'},<br><br>
-                Thank you for subscribing to our YourAIbrief! You're now part of a community of AI enthusiasts, 
+                Thank you for subscribing to our YourAIbrief! You're now part of a community of AI enthusiasts,
                 researchers, and developers who stay ahead of the curve with curated AI news and insights.
               </p>
 
@@ -91,9 +105,7 @@ export class SimpleEmailService {
             </div>
           </div>
         `,
-      };
-
-      await sgMail.send(msg);
+      });
       console.log(`[SimpleEmail] Welcome email sent to ${email}`);
       return true;
     } catch (error) {
@@ -109,43 +121,37 @@ export class SimpleEmailService {
       return false;
     }
 
-    const msg = {
-      to: toEmail,
-      from: {
-        email: this.fromEmail,
-        name: this.fromName,
-      },
-      subject: 'Your YourAIbrief sign-in link',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #2563eb; margin: 0;">🤖 YourAIbrief</h1>
-          </div>
-          <div style="background: #f8fafc; padding: 30px; border-radius: 10px;">
-            <h2 style="color: #1f2937; margin: 0 0 20px 0;">Hi ${name || 'there'},</h2>
-            <p style="color: #374151; line-height: 1.6;">
-              Click below to securely sign in to your YourAIbrief account.
-            </p>
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${link}" style="background: #2563eb; color: #ffffff; padding: 12px 24px;
-                      border-radius: 6px; display: inline-block; font-weight: bold; text-decoration: none;">
-                Sign in to YourAIbrief
-              </a>
-            </div>
-            <p style="color: #9ca3af; font-size: 12px; text-align: center;">
-              This link expires in 15 minutes and can only be used once. If you didn't request this, you can safely ignore this email.
-            </p>
-          </div>
-        </div>
-      `,
-    };
-
     try {
-      await sgMail.send(msg);
+      await this.send({
+        to: toEmail,
+        subject: 'Your YourAIbrief sign-in link',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #2563eb; margin: 0;">🤖 YourAIbrief</h1>
+            </div>
+            <div style="background: #f8fafc; padding: 30px; border-radius: 10px;">
+              <h2 style="color: #1f2937; margin: 0 0 20px 0;">Hi ${name || 'there'},</h2>
+              <p style="color: #374151; line-height: 1.6;">
+                Click below to securely sign in to your YourAIbrief account.
+              </p>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${link}" style="background: #2563eb; color: #ffffff; padding: 12px 24px;
+                        border-radius: 6px; display: inline-block; font-weight: bold; text-decoration: none;">
+                  Sign in to YourAIbrief
+                </a>
+              </div>
+              <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+                This link expires in 15 minutes and can only be used once. If you didn't request this, you can safely ignore this email.
+              </p>
+            </div>
+          </div>
+        `,
+      });
       console.log(`[SimpleEmailService] Sign-in email sent to ${toEmail}`);
       return true;
     } catch (error: any) {
-      console.error(`[SimpleEmailService] Error sending sign-in email to ${toEmail}:`, error.response?.body || error);
+      console.error(`[SimpleEmailService] Error sending sign-in email to ${toEmail}:`, error);
       return false;
     }
   }
@@ -157,50 +163,44 @@ export class SimpleEmailService {
       return false;
     }
 
-    const msg = {
-      to: toEmail,
-      from: {
-        email: this.fromEmail,
-        name: this.fromName,
-      },
-      subject: 'You\'ve been unsubscribed from YourAIbrief',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
-          <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #dc2626; margin: 0;">📧 Unsubscribed</h1>
-            <p style="color: #6b7280; margin: 10px 0;">YourAIbrief</p>
-          </div>
+    try {
+      await this.send({
+        to: toEmail,
+        subject: 'You\'ve been unsubscribed from YourAIbrief',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #dc2626; margin: 0;">📧 Unsubscribed</h1>
+              <p style="color: #6b7280; margin: 10px 0;">YourAIbrief</p>
+            </div>
 
-          <div style="background: #f8fafc; padding: 30px; border-radius: 10px; margin-bottom: 20px;">
-            <h2 style="color: #1f2937; margin: 0 0 20px 0;">Goodbye ${userName || 'there'},</h2>
-            <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
-              You have successfully unsubscribed from YourAIbrief. You will no longer receive our newsletters.
-            </p>
-            <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
-              We're sorry to see you go! If you change your mind, you can always resubscribe by visiting our website.
-            </p>
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.NEXTAUTH_URL || 'http://localhost:3000'}" style="background: #2563eb; color: #ffffff; padding: 12px 24px;
-                      border-radius: 6px; display: inline-block; font-weight: bold; text-decoration: none;">
-                Resubscribe
-              </a>
+            <div style="background: #f8fafc; padding: 30px; border-radius: 10px; margin-bottom: 20px;">
+              <h2 style="color: #1f2937; margin: 0 0 20px 0;">Goodbye ${userName || 'there'},</h2>
+              <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
+                You have successfully unsubscribed from YourAIbrief. You will no longer receive our newsletters.
+              </p>
+              <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
+                We're sorry to see you go! If you change your mind, you can always resubscribe by visiting our website.
+              </p>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${process.env.NEXTAUTH_URL || 'http://localhost:3000'}" style="background: #2563eb; color: #ffffff; padding: 12px 24px;
+                        border-radius: 6px; display: inline-block; font-weight: bold; text-decoration: none;">
+                  Resubscribe
+                </a>
+              </div>
+            </div>
+
+            <div style="text-align: center; color: #6b7280; font-size: 12px;">
+              <p>Thank you for being part of our community!</p>
+              <p>If you have any questions, feel free to reply to this email.</p>
             </div>
           </div>
-
-          <div style="text-align: center; color: #6b7280; font-size: 12px;">
-            <p>Thank you for being part of our community!</p>
-            <p>If you have any questions, feel free to reply to this email.</p>
-          </div>
-        </div>
-      `,
-    };
-
-    try {
-      await sgMail.send(msg);
+        `,
+      });
       console.log(`[SimpleEmailService] Unsubscribe confirmation email sent to ${toEmail}`);
       return true;
     } catch (error: any) {
-      console.error(`[SimpleEmailService] Error sending unsubscribe confirmation to ${toEmail}:`, error.response?.body || error);
+      console.error(`[SimpleEmailService] Error sending unsubscribe confirmation to ${toEmail}:`, error);
       return false;
     }
   }
@@ -217,66 +217,54 @@ export class SimpleEmailService {
       return false;
     }
 
-    // Send notification to admin (from email)
-    const adminMsg = {
-      to: this.fromEmail,
-      from: {
-        email: this.fromEmail,
-        name: this.fromName,
-      },
-      replyTo: contactEmail,
-      subject: `Contact Form: ${subject}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2 style="color: #1f2937; margin: 0 0 20px 0;">New Contact Form Submission</h2>
-          <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-            <p><strong>From:</strong> ${contactName} (${contactEmail})</p>
-            <p><strong>Subject:</strong> ${subject}</p>
-            <p><strong>Message:</strong></p>
-            <div style="background: #ffffff; padding: 15px; border-radius: 6px; margin-top: 10px; white-space: pre-wrap;">${message}</div>
-          </div>
-          <p style="color: #6b7280; font-size: 12px;">You can reply directly to this email to respond to ${contactName}.</p>
-        </div>
-      `,
-    };
-
-    // Send confirmation to user
-    const userMsg = {
-      to: contactEmail,
-      from: {
-        email: this.fromEmail,
-        name: this.fromName,
-      },
-      subject: `Re: ${subject}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #2563eb; margin: 0;">🤖 YourAIbrief</h1>
-          </div>
-          <div style="background: #f8fafc; padding: 30px; border-radius: 10px;">
-            <h2 style="color: #1f2937; margin: 0 0 20px 0;">Thank you for contacting us!</h2>
-            <p style="color: #374151; line-height: 1.6;">
-              Hi ${contactName},<br><br>
-              We've received your message and will get back to you as soon as possible.
-            </p>
-            <div style="background: #ffffff; padding: 15px; border-radius: 6px; margin: 20px 0;">
-              <p style="margin: 0; color: #6b7280; font-size: 14px;"><strong>Your message:</strong></p>
-              <p style="margin: 10px 0 0 0; color: #374151; white-space: pre-wrap;">${message}</p>
-            </div>
-          </div>
-        </div>
-      `,
-    };
-
     try {
       await Promise.all([
-        sgMail.send(adminMsg),
-        sgMail.send(userMsg),
+        // Notification to admin (from address)
+        this.send({
+          to: this.fromEmail,
+          replyTo: contactEmail,
+          subject: `Contact Form: ${subject}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h2 style="color: #1f2937; margin: 0 0 20px 0;">New Contact Form Submission</h2>
+              <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <p><strong>From:</strong> ${contactName} (${contactEmail})</p>
+                <p><strong>Subject:</strong> ${subject}</p>
+                <p><strong>Message:</strong></p>
+                <div style="background: #ffffff; padding: 15px; border-radius: 6px; margin-top: 10px; white-space: pre-wrap;">${message}</div>
+              </div>
+              <p style="color: #6b7280; font-size: 12px;">You can reply directly to this email to respond to ${contactName}.</p>
+            </div>
+          `,
+        }),
+        // Confirmation to user
+        this.send({
+          to: contactEmail,
+          subject: `Re: ${subject}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <div style="text-align: center; margin-bottom: 30px;">
+                <h1 style="color: #2563eb; margin: 0;">🤖 YourAIbrief</h1>
+              </div>
+              <div style="background: #f8fafc; padding: 30px; border-radius: 10px;">
+                <h2 style="color: #1f2937; margin: 0 0 20px 0;">Thank you for contacting us!</h2>
+                <p style="color: #374151; line-height: 1.6;">
+                  Hi ${contactName},<br><br>
+                  We've received your message and will get back to you as soon as possible.
+                </p>
+                <div style="background: #ffffff; padding: 15px; border-radius: 6px; margin: 20px 0;">
+                  <p style="margin: 0; color: #6b7280; font-size: 14px;"><strong>Your message:</strong></p>
+                  <p style="margin: 10px 0 0 0; color: #374151; white-space: pre-wrap;">${message}</p>
+                </div>
+              </div>
+            </div>
+          `,
+        }),
       ]);
       console.log(`[SimpleEmailService] Contact form notification sent for ${contactEmail}`);
       return true;
     } catch (error: any) {
-      console.error(`[SimpleEmailService] Error sending contact form notification:`, error.response?.body || error);
+      console.error(`[SimpleEmailService] Error sending contact form notification:`, error);
       return false;
     }
   }

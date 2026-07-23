@@ -1,4 +1,4 @@
-import sgMail from '@sendgrid/mail';
+import { Resend } from 'resend';
 import { Newsletter, User } from '@/types';
 import { prisma } from '@/lib/prisma';
 
@@ -7,108 +7,75 @@ export class EmailService {
   private fromEmail: string;
   private fromName: string;
   private isConfigured: boolean;
+  private resend: Resend | null;
 
   constructor() {
-    this.apiKey = process.env.SENDGRID_API_KEY || '';
-    this.fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@ai-newsletter.com';
-    this.fromName = process.env.SENDGRID_FROM_NAME || 'YourAIbrief';
+    this.apiKey = process.env.RESEND_API_KEY || '';
+    this.fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+    this.fromName = process.env.RESEND_FROM_NAME || 'YourAIbrief';
     this.isConfigured = !!this.apiKey;
-    
-    if (this.apiKey) {
-      sgMail.setApiKey(this.apiKey);
-    } else {
-      console.warn('[EmailService] SENDGRID_API_KEY not configured');
+    this.resend = this.apiKey ? new Resend(this.apiKey) : null;
+
+    if (!this.apiKey) {
+      console.warn('[EmailService] RESEND_API_KEY not configured');
     }
+  }
+
+  private get from(): string {
+    return `${this.fromName} <${this.fromEmail}>`;
   }
 
   // Enhanced validation
   private validateConfiguration(): { valid: boolean; error?: string } {
-    if (!this.isConfigured) {
-      return { valid: false, error: 'SendGrid API key not configured' };
+    if (!this.isConfigured || !this.resend) {
+      return { valid: false, error: 'Resend API key not configured' };
     }
-    
+
     if (!this.fromEmail || !this.fromName) {
       return { valid: false, error: 'From email or name not configured' };
     }
-    
+
     return { valid: true };
   }
 
   // Enhanced email sending with retry logic
-  private async sendWithRetry(msg: any, maxRetries: number = 3): Promise<{ success: boolean; error?: string }> {
+  private async sendWithRetry(msg: { to: string; subject: string; html: string }, maxRetries: number = 3): Promise<{ success: boolean; error?: string }> {
     const config = this.validateConfiguration();
-    if (!config.valid) {
+    if (!config.valid || !this.resend) {
       return { success: false, error: config.error };
     }
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         console.log(`[EmailService] Sending email (attempt ${attempt}/${maxRetries}) to ${msg.to}`);
-        
-        const response = await sgMail.send(msg);
-        console.log(`[EmailService] Email sent successfully to ${msg.to}`, response[0]?.statusCode);
-        
+
+        const { data, error } = await this.resend.emails.send({
+          from: this.from,
+          to: msg.to,
+          subject: msg.subject,
+          html: msg.html,
+        });
+        if (error) {
+          throw error;
+        }
+
+        console.log(`[EmailService] Email sent successfully to ${msg.to}`, data?.id);
+
         return { success: true };
       } catch (error) {
         console.error(`[EmailService] Attempt ${attempt} failed for ${msg.to}:`, error);
-        
+
         if (attempt === maxRetries) {
-          // Log detailed error information
-          if (error && typeof error === 'object' && 'response' in error) {
-            const sgError = error as any;
-            console.error('[EmailService] SendGrid error details:', {
-              statusCode: sgError.code,
-              message: sgError.message,
-              response: sgError.response?.body
-            });
-            return { success: false, error: `SendGrid error: ${sgError.message}` };
-          }
-          return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+          const resendError = error as any;
+          return { success: false, error: resendError?.message || (error instanceof Error ? error.message : 'Unknown error') };
         }
-        
+
         // Wait before retry (exponential backoff)
         await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
       }
     }
-    
+
     return { success: false, error: 'Max retries exceeded' };
-  }
-
-  async sendWelcomeEmail(user: User): Promise<boolean> {
-    try {
-      const msg = {
-        to: user.email,
-        from: {
-          email: this.fromEmail,
-          name: this.fromName,
-        },
-        subject: 'Welcome to YourAIbrief! 🚀',
-        templateId: process.env.WELCOME_EMAIL_TEMPLATE_ID || 'd-welcome-template-id',
-        dynamicTemplateData: {
-          user_name: user.name || 'there',
-          interests: user.preferences?.interests || [],
-          unsubscribe_url: `${process.env.NEXTAUTH_URL}/unsubscribe?email=${encodeURIComponent(user.email)}`,
-        },
-      };
-
-      await sgMail.send(msg);
-      return true;
-    } catch (error) {
-      if (
-        typeof error === 'object' &&
-        error !== null &&
-        'response' in error &&
-        error.response &&
-        typeof error.response === 'object' &&
-        'body' in error.response &&
-        error.response.body
-      ) {
-        console.error('SendGrid error:', (error as any).response.body);
-      } else {
-        console.error('SendGrid error:', error);
-      }
-      return false;
-    }
   }
 
   async sendNewsletter(newsletter: Newsletter, users: User[]): Promise<{ success: number; failed: number }> {
@@ -125,22 +92,8 @@ export class EmailService {
         
         const msg = {
           to: user.email,
-          from: {
-            email: this.fromEmail,
-            name: this.fromName,
-          },
           subject: `${newsletter.title} - ${new Date().toLocaleDateString()}`,
           html: personalizedContent,
-          // Add tracking and unsubscribe links
-          trackingSettings: {
-            clickTracking: { enable: true },
-            openTracking: { enable: true },
-          },
-          customArgs: {
-            userId: user.id,
-            newsletterId: newsletter.id,
-            userEmail: user.email,
-          },
         };
 
         const result = await this.sendWithRetry(msg);
@@ -350,19 +303,20 @@ export class EmailService {
 
   async sendTestEmail(to: string, newsletter: Newsletter): Promise<boolean> {
     try {
+      if (!this.resend) {
+        throw new Error('Resend API key not configured');
+      }
       const html = this.generateNewsletterHTML(newsletter);
-      
-      const msg = {
+
+      const { error } = await this.resend.emails.send({
+        from: this.from,
         to,
-        from: {
-          email: this.fromEmail,
-          name: this.fromName,
-        },
         subject: `[TEST] ${newsletter.title}`,
         html,
-      };
-
-      await sgMail.send(msg);
+      });
+      if (error) {
+        throw error;
+      }
       return true;
     } catch (error) {
       console.error('Error sending test email:', error);

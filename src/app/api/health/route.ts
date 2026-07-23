@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
       version: '1.0.0',
       services: {
         database: 'unknown', // We'll check this if needed
-        email: process.env.SENDGRID_API_KEY ? 'configured' : 'not configured',
+        email: process.env.RESEND_API_KEY ? 'configured' : 'not configured',
         news: process.env.NEWS_API_KEY ? 'configured' : 'not configured',
         cron: process.env.CRON_SECRET ? 'configured' : 'not configured'
       }

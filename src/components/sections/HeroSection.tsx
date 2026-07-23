@@ -138,11 +138,14 @@ export function HeroSection() {
         return;
       }
       
-      if (data.success) {
+      if (data.success && data.emailSent) {
         // Subscription successful - /api/subscribe already emailed a
         // one-time confirm-and-sign-in link, so just point them at it.
-        setFormMessage('Subscription successful! Check your email to confirm and sign in.');
         router.push('/subscribed');
+      } else if (data.success && !data.emailSent) {
+        // Account was created, but the confirmation email failed to send -
+        // don't send them to a "check your email" page for one that never arrives.
+        setFormMessage(data.message || "Subscribed, but we couldn't send your confirmation email. Please try again shortly.");
       } else if (data.alreadySubscribed) {
         setFormMessage('You are already subscribed with this email address.');
       } else {

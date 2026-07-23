@@ -107,22 +107,32 @@ export async function POST(request: NextRequest) {
     
             // Send a welcome email containing a one-time sign-in/confirmation link.
             // No session is created here - the user must click the link to sign in.
+            // The account is already created at this point, so a failed send shouldn't
+            // fail the subscription itself - but the client still needs to know, so it
+            // doesn't tell the user to "check your email" for one that never arrives.
+            let emailSent = false;
             try {
               const token = await createSignInToken(user.email);
               const baseUrl = process.env.NEXTAUTH_URL || request.nextUrl.origin;
               const verifyLink = buildVerifyLink(user.email, token, baseUrl);
 
               const emailService = new SimpleEmailService();
-              await emailService.sendWelcomeEmail(user.email, user.name || undefined, verifyLink);
-              console.log('Welcome/confirmation email sent to:', user.email);
+              emailSent = await emailService.sendWelcomeEmail(user.email, user.name || undefined, verifyLink);
+              if (emailSent) {
+                console.log('Welcome/confirmation email sent to:', user.email);
+              } else {
+                console.error('Welcome/confirmation email send returned false for:', user.email);
+              }
             } catch (emailError) {
               console.error('Failed to send welcome email:', emailError);
-              // Don't fail the subscription if email fails
             }
-    
+
     return NextResponse.json({
       success: true,
-      message: 'Subscription successful! Welcome to YourAIbrief! Check your email for a welcome message.',
+      emailSent,
+      message: emailSent
+        ? 'Subscription successful! Check your email for a link to confirm and sign in.'
+        : "Subscription successful, but we couldn't send your confirmation email right now. Please try signing in again shortly.",
       user: {
         id: user.id,
         email: user.email,

@@ -7,9 +7,9 @@ export async function GET(request: NextRequest) {
 
   try {
     const config = {
-      sendgridApiKey: process.env.SENDGRID_API_KEY ? 'Set' : 'Not set',
-      sendgridFromEmail: process.env.SENDGRID_FROM_EMAIL || 'Not set',
-      sendgridFromName: process.env.SENDGRID_FROM_NAME || 'Not set',
+      resendApiKey: process.env.RESEND_API_KEY ? 'Set' : 'Not set',
+      resendFromEmail: process.env.RESEND_FROM_EMAIL || 'Not set',
+      resendFromName: process.env.RESEND_FROM_NAME || 'Not set',
       nextauthUrl: process.env.NEXTAUTH_URL || 'Not set',
       cronSecret: process.env.CRON_SECRET ? 'Set' : 'Not set',
     };
