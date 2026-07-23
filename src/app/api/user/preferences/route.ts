@@ -44,16 +44,16 @@ export async function GET(req: NextRequest) {
       });
     }
     
-    const user = await prisma.user.findUnique({ 
-      where: { email: session.user.email }, 
-      include: { userInterests: true } 
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      include: { userInterests: true }
     });
-    
+
     if (!user) {
-      return NextResponse.json({ 
-        success: false, 
-        message: 'User not found' 
-      }, { 
+      return NextResponse.json({
+        success: false,
+        message: 'User not found'
+      }, {
         status: 404,
         headers: {
           'Access-Control-Allow-Origin': '*',
@@ -62,13 +62,29 @@ export async function GET(req: NextRequest) {
         }
       });
     }
-    
+
+    const [newslettersReceived, lastDelivery] = await Promise.all([
+      prisma.emailLog.count({
+        where: { to: user.email, status: { in: ['SENT', 'DELIVERED'] } },
+      }),
+      prisma.emailLog.findFirst({
+        where: { to: user.email, status: { in: ['SENT', 'DELIVERED'] } },
+        orderBy: { sentAt: 'desc' },
+        select: { sentAt: true },
+      }),
+    ]);
+
     return NextResponse.json({
       success: true,
       name: user.name,
       preferredSendTime: user.preferredSendTime ?? null,
       preferences: user.preferences ?? {},
       topics: user.userInterests.map(ui => ui.category),
+      stats: {
+        newslettersReceived,
+        memberSince: user.createdAt,
+        lastDelivery: lastDelivery?.sentAt ?? null,
+      },
     }, {
       headers: {
         'Access-Control-Allow-Origin': '*',

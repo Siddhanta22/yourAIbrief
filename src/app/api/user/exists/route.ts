@@ -38,20 +38,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ exists: false });
     }
 
-    const userPreferences = user.preferences as any;
-
     // For existing users who signed up before email confirmation was implemented,
     // treat them as verified if they have userInterests (meaning they completed signup)
     const isVerified = user.emailVerified || user.userInterests.length > 0;
 
+    // This endpoint is unauthenticated by design (called with a self-reported email
+    // from the unsubscribe/confirmation-status pages), so it must not return anything
+    // beyond what those pages need - no name, preferences, or interests.
     const response = NextResponse.json({
       exists: true,
-      name: user.name,
       emailVerified: !!isVerified,
       isActive: user.isActive,
-      preferredSendTime: user.preferredSendTime,
-      frequency: userPreferences?.frequency || 'daily',
-      interests: user.userInterests.map(ui => ui.category),
     });
 
     // Add CORS headers

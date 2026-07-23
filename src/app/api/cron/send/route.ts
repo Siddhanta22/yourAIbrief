@@ -276,8 +276,14 @@ export async function GET(request: NextRequest) {
       try {
         console.log(`[Cron] Processing ${user.email}...`);
         
-        // Get user interests
-        const interests = user.userInterests?.map((i: any) => i.category) || [];
+        // Get user interests. New signups get both the UserInterest table (source of
+        // truth here) and preferences.interests populated together (see /api/subscribe),
+        // but fall back to the JSON blob for any older row where only that was set.
+        let interests = user.userInterests?.map((i: any) => i.category) || [];
+        if (interests.length === 0) {
+          const prefs = parseUserPreferences(user.preferences);
+          interests = (prefs.interests || []) as string[];
+        }
         console.log(`[Cron] User ${user.email} interests:`, interests);
         
         // Curate content

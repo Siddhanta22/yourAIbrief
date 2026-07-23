@@ -92,6 +92,16 @@ export async function POST(request: NextRequest) {
         emailVerified: null
       }
     });
+
+    // Content curation (see content-curation.ts / cron/send) reads interests from the
+    // UserInterest table, not the preferences JSON blob above - without this, every
+    // subscriber's selected topics would silently never make it into their newsletter.
+    if (Array.isArray(interests) && interests.length > 0) {
+      await prisma.userInterest.createMany({
+        data: interests.map((category: string) => ({ userId: user.id, category })),
+        skipDuplicates: true,
+      });
+    }
     
     console.log('User created:', user.id);
     
