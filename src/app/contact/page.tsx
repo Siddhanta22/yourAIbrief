@@ -55,30 +55,30 @@ export default function ContactPage() {
   };
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen dark:bg-neutral-900">
       {/* Hero Section */}
-      <section className="py-20 bg-gradient-to-br from-blue-50 to-purple-50">
+      <section className="py-20 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-neutral-900 dark:to-neutral-800">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-neutral-100 mb-6">
             Get in Touch
           </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Have questions about our AI newsletter? Want to suggest content or collaborate? 
+          <p className="text-xl text-gray-600 dark:text-neutral-400 mb-8 max-w-3xl mx-auto">
+            Have questions about our AI newsletter? Want to suggest content or collaborate?
             We'd love to hear from you.
           </p>
         </div>
       </section>
 
       {/* Contact Form Section */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-white dark:bg-neutral-900">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Contact Form */}
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">Send us a message</h2>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-neutral-100 mb-6">Send us a message</h2>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
                     Name
                   </label>
                   <input
@@ -88,12 +88,12 @@ export default function ContactPage() {
                     value={formData.name}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 placeholder-gray-400 dark:placeholder-neutral-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Your name"
                   />
                 </div>
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
                     Email
                   </label>
                   <input
@@ -103,12 +103,12 @@ export default function ContactPage() {
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 placeholder-gray-400 dark:placeholder-neutral-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="your@email.com"
                   />
                 </div>
                 <div>
-                  <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="subject" className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
                     Subject
                   </label>
                   <input
@@ -118,12 +118,12 @@ export default function ContactPage() {
                     value={formData.subject}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 placeholder-gray-400 dark:placeholder-neutral-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="What's this about?"
                   />
                 </div>
                 <div>
-                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
                     Message
                   </label>
                   <textarea
@@ -133,7 +133,7 @@ export default function ContactPage() {
                     onChange={handleChange}
                     required
                     rows={6}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 placeholder-gray-400 dark:placeholder-neutral-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Tell us what's on your mind..."
                   />
                 </div>
@@ -159,40 +159,40 @@ export default function ContactPage() {
 
             {/* Contact Info */}
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">Contact Information</h2>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-neutral-100 mb-6">Contact Information</h2>
               <div className="space-y-6">
                 <div className="flex items-start">
-                  <Mail className="w-6 h-6 text-blue-600 mr-4 mt-1" />
+                  <Mail className="w-6 h-6 text-blue-600 dark:text-primary-400 mr-4 mt-1" />
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Email</h3>
-                    <p className="text-gray-600">hello@ainewsletter.com</p>
-                    <p className="text-sm text-gray-500">We typically respond within 24 hours</p>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-neutral-100 mb-2">Email</h3>
+                    <p className="text-gray-600 dark:text-neutral-400">hello@youraibrief.com</p>
+                    <p className="text-sm text-gray-500 dark:text-neutral-500">We typically respond within 24 hours</p>
                   </div>
                 </div>
                 <div className="flex items-start">
-                  <MessageSquare className="w-6 h-6 text-blue-600 mr-4 mt-1" />
+                  <MessageSquare className="w-6 h-6 text-blue-600 dark:text-primary-400 mr-4 mt-1" />
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Feedback</h3>
-                    <p className="text-gray-600">We love hearing from our readers</p>
-                    <p className="text-sm text-gray-500">Share your thoughts on our content</p>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-neutral-100 mb-2">Feedback</h3>
+                    <p className="text-gray-600 dark:text-neutral-400">We love hearing from our readers</p>
+                    <p className="text-sm text-gray-500 dark:text-neutral-500">Share your thoughts on our content</p>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-8 bg-gray-50 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Frequently Asked Questions</h3>
+              <div className="mt-8 bg-gray-50 dark:bg-neutral-800 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-neutral-100 mb-4">Frequently Asked Questions</h3>
                 <div className="space-y-4">
                   <div>
-                    <h4 className="font-medium text-gray-900">How often do you send newsletters?</h4>
-                    <p className="text-sm text-gray-600">We send daily newsletters with the latest AI developments.</p>
+                    <h4 className="font-medium text-gray-900 dark:text-neutral-100">How often do you send newsletters?</h4>
+                    <p className="text-sm text-gray-600 dark:text-neutral-400">We send daily newsletters with the latest AI developments.</p>
                   </div>
                   <div>
-                    <h4 className="font-medium text-gray-900">Is the newsletter free?</h4>
-                    <p className="text-sm text-gray-600">Yes, our basic newsletter is completely free to subscribe.</p>
+                    <h4 className="font-medium text-gray-900 dark:text-neutral-100">Is the newsletter free?</h4>
+                    <p className="text-sm text-gray-600 dark:text-neutral-400">Yes, our basic newsletter is completely free to subscribe.</p>
                   </div>
                   <div>
-                    <h4 className="font-medium text-gray-900">Can I unsubscribe anytime?</h4>
-                    <p className="text-sm text-gray-600">Absolutely! You can unsubscribe with one click from any email.</p>
+                    <h4 className="font-medium text-gray-900 dark:text-neutral-100">Can I unsubscribe anytime?</h4>
+                    <p className="text-sm text-gray-600 dark:text-neutral-400">Absolutely! You can unsubscribe with one click from any email.</p>
                   </div>
                 </div>
               </div>
