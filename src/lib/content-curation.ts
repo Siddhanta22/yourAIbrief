@@ -163,7 +163,6 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
 
       const pageFiltered = raw
         .filter((a: any) => a.urlToImage && typeof a.urlToImage === 'string' && a.urlToImage.trim() !== '')
-        .filter((a: any) => isSourceWhitelisted(a.source?.name || ''))
         .filter((a: any) => !SOURCE_BLOCKLIST.some(blocked => (a.source?.name || '').toLowerCase().includes(blocked.toLowerCase())))
         .filter((a: any) => !KEYWORD_BLOCKLIST.some(rx => rx.test(`${a.title} ${a.description || ''}`)))
         .filter((a: any) => isAIArticle(a))
@@ -205,7 +204,6 @@ async function fetchNewsFromNewsAPI(topics: string[] = [], page: number = 1, pag
       if (raw.length === 0) { reachedEnd = true; break; }
       const pageFiltered = raw
         .filter((a: any) => a.urlToImage && typeof a.urlToImage === 'string' && a.urlToImage.trim() !== '')
-        .filter((a: any) => isSourceWhitelisted(a.source?.name || ''))
         .filter((a: any) => !SOURCE_BLOCKLIST.some(blocked => (a.source?.name || '').toLowerCase().includes(blocked.toLowerCase())))
         .filter((a: any) => !KEYWORD_BLOCKLIST.some(rx => rx.test(`${a.title} ${a.description || ''}`)))
         .filter((a: any) => isAIArticle(a))
@@ -359,10 +357,11 @@ export class ContentCurationService {
       }
     }
 
-    // 2. What’s Popping in AI? section (broader, fun/miscellaneous, but still from whitelisted sources)
+    // 2. What's Popping in AI? section (broader, fun/miscellaneous; already ran through
+    // the blocklist/keyword/AI-topic filters upstream in fetchNewsFromNewsAPI, just not
+    // the narrower source whitelist that per-topic sections above require)
     const poppingArticles = allArticles.articles
       .filter(article =>
-        isSourceWhitelisted(article.source) &&
         isAIArticle(article) &&
         (now.getTime() - new Date(article.publishedAt).getTime() < 7 * 24 * 60 * 60 * 1000) // last 7 days
       )

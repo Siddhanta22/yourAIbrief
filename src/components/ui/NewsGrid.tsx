@@ -62,11 +62,12 @@ export function NewsGrid({
         }
         
         const received: NewsletterArticle[] = data?.articles || [];
-        
-        if (!received || received.length === 0) {
-          throw new Error(data.message || 'No articles in response');
-        }
-        
+
+        // An empty array is a legitimate response (e.g. filters matched nothing
+        // this time, or this page is past the end) - not an error. Let it fall
+        // through to the "No Articles Available" empty state below instead of
+        // being thrown as a failure.
+
         // Normalize dates (handle both Date objects and ISO strings)
         const normalizedArticles = received.map(article => ({
           ...article,
