@@ -283,10 +283,15 @@ export async function GET(request: NextRequest) {
         // Curate content
         const curated = await curation.curateContent(interests);
         console.log(`[Cron] Curated ${curated.sections?.length || 0} sections for ${user.email}`);
-        
+
+        // Persist the issue first so its real id can be embedded in the email's
+        // open/click tracking links (the pixel/click-through URLs need a real,
+        // stable id, not a throwaway string generated after the fact).
+        const dbNewsletter = await saveNewsletterForUser(user.id, 'Your AI Brief', curated);
+
         // Create newsletter
         const newsletter = {
-          id: `nl-${Date.now()}-${user.id}`,
+          id: dbNewsletter.id,
           title: 'Your AI Brief',
           content: { sections: curated.sections, summary: curated.summary, metadata: curated.metadata },
           summary: curated.summary,
@@ -318,7 +323,7 @@ export async function GET(request: NextRequest) {
         success += result.success;
         failed += result.failed;
         
-        // Log email delivery and persist the issue so the user can see it in their archive
+        // Log email delivery
         if (result.success > 0) {
           await prisma.emailLog.create({
             data: {
@@ -334,12 +339,6 @@ export async function GET(request: NextRequest) {
               }
             }
           });
-
-          try {
-            await saveNewsletterForUser(user.id, newsletter.title, curated);
-          } catch (archiveError) {
-            console.error(`[Cron] Failed to save newsletter archive for ${user.email}:`, archiveError);
-          }
         }
         
         console.log(`[Cron] Result for ${user.email}: success=${result.success}, failed=${result.failed}`);

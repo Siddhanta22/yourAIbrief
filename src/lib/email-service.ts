@@ -233,6 +233,9 @@ export class EmailService {
     const unsubscribeUrl = user?.email
       ? `${baseUrl}/unsubscribe?email=${encodeURIComponent(user.email)}`
       : `${baseUrl}/unsubscribe`;
+    const trackingId = newsletter.id;
+    const clickUrl = (articleUrl: string) =>
+      `${baseUrl}/api/track/click?nId=${encodeURIComponent(trackingId)}&url=${encodeURIComponent(articleUrl)}`;
 
     let html = `
       <!DOCTYPE html>
@@ -294,7 +297,7 @@ export class EmailService {
         html += `
           <div class="article">
             <div class="article-title">
-              <a href="${article.url}" style="color: #2563eb; text-decoration: none;">
+              <a href="${clickUrl(article.url)}" style="color: #2563eb; text-decoration: none;">
                 ${article.title}
               </a>
             </div>
@@ -315,6 +318,7 @@ export class EmailService {
             <p><a href="${unsubscribeUrl}">Unsubscribe</a></p>
           </div>
         </div>
+        <img src="${baseUrl}/api/track/open?nId=${encodeURIComponent(trackingId)}" width="1" height="1" alt="" style="display:none" />
       </body>
       </html>
     `;

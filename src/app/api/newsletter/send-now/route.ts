@@ -50,11 +50,16 @@ export async function POST(request: NextRequest) {
     
     // Curate content
     const curated = await curation.curateContent(interests);
-    
+
+    // Persist first so its real id can be embedded in the email's open/click
+    // tracking links.
+    const title = testMode ? 'Test Newsletter - Your AI Brief' : 'Your AI Brief';
+    const dbNewsletter = await saveNewsletterForUser(user.id, title, curated);
+
     // Create newsletter object
     const newsletter = {
-      id: `nl-${Date.now()}-${user.id}`,
-      title: testMode ? 'Test Newsletter - Your AI Brief' : 'Your AI Brief',
+      id: dbNewsletter.id,
+      title,
       content: { sections: curated.sections, summary: curated.summary, metadata: curated.metadata },
       summary: curated.summary,
       publishedAt: new Date(),
@@ -83,12 +88,6 @@ export async function POST(request: NextRequest) {
     ]);
 
     if (result.success > 0) {
-      try {
-        await saveNewsletterForUser(user.id, newsletter.title, curated);
-      } catch (archiveError) {
-        console.error(`[Send Now] Failed to save newsletter archive for ${user.email}:`, archiveError);
-      }
-
       return NextResponse.json({
         success: true,
         message: testMode ? 'Test newsletter sent successfully!' : 'Newsletter sent successfully!',

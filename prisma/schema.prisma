@@ -126,6 +126,8 @@ model NewsletterAnalytics {
   updatedAt    DateTime @updatedAt
 
   newsletter Newsletter @relation(fields: [newsletterId], references: [id], onDelete: Cascade)
+
+  @@unique([newsletterId])
 }
 
 model ContentSource {
