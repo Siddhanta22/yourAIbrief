@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { EmailService } from '@/lib/email-service';
 import { ContentCurationService } from '@/lib/content-curation';
 import { parsePreferredHour } from '@/lib/deliveryTime';
+import { saveNewsletterForUser } from '@/lib/newsletterStore';
 
 export const dynamic = 'force-dynamic';
 
@@ -317,7 +318,7 @@ export async function GET(request: NextRequest) {
         success += result.success;
         failed += result.failed;
         
-        // Log email delivery
+        // Log email delivery and persist the issue so the user can see it in their archive
         if (result.success > 0) {
           await prisma.emailLog.create({
             data: {
@@ -333,6 +334,12 @@ export async function GET(request: NextRequest) {
               }
             }
           });
+
+          try {
+            await saveNewsletterForUser(user.id, newsletter.title, curated);
+          } catch (archiveError) {
+            console.error(`[Cron] Failed to save newsletter archive for ${user.email}:`, archiveError);
+          }
         }
         
         console.log(`[Cron] Result for ${user.email}: success=${result.success}, failed=${result.failed}`);

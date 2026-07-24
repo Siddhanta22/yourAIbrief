@@ -3,8 +3,16 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { User, Clock, Settings, CalendarDays, Send } from 'lucide-react';
+import { User, Clock, Settings, CalendarDays, Send, ChevronRight } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
+
+interface PastIssue {
+  id: string;
+  title: string;
+  summary: string | null;
+  publishedAt: string;
+  articleCount: number;
+}
 
 type SessionUserWithId = {
   id?: string;
@@ -31,11 +39,16 @@ function formatDate(value: string | null): string {
   return new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+function formatIssueDate(value: string): string {
+  return new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pastIssues, setPastIssues] = useState<PastIssue[]>([]);
 
   useEffect(() => {
     // Wait for session to load
@@ -81,7 +94,22 @@ export default function DashboardPage() {
       }
     };
 
+    const fetchHistory = async () => {
+      try {
+        const response = await fetch('/api/newsletter/history');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setPastIssues(data.newsletters ?? []);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching newsletter history:', error);
+      }
+    };
+
     fetchUserData();
+    fetchHistory();
   }, [status, session, router]);
 
 
@@ -220,6 +248,33 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* Past Issues */}
+        {pastIssues.length > 0 && (
+          <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-sm p-6 mt-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-neutral-100 mb-4 flex items-center">
+              <Send className="w-5 h-5 mr-2" />
+              Past Issues
+            </h3>
+            <div className="divide-y divide-gray-100 dark:divide-neutral-700">
+              {pastIssues.map((issue) => (
+                <button
+                  key={issue.id}
+                  onClick={() => router.push(`/newsletter/${issue.id}`)}
+                  className="w-full flex items-center justify-between py-3 text-left hover:bg-gray-50 dark:hover:bg-neutral-700/50 rounded-lg px-2 -mx-2 transition-colors"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-neutral-100">{issue.title}</p>
+                    <p className="text-xs text-gray-500 dark:text-neutral-500">
+                      {formatIssueDate(issue.publishedAt)} • {issue.articleCount} articles
+                    </p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

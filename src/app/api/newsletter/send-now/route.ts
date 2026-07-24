@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { EmailService } from '@/lib/email-service';
 import { ContentCurationService } from '@/lib/content-curation';
 import { requireAdmin } from '@/lib/requireAdmin';
+import { saveNewsletterForUser } from '@/lib/newsletterStore';
 
 export const dynamic = 'force-dynamic';
 
@@ -82,8 +83,14 @@ export async function POST(request: NextRequest) {
     ]);
 
     if (result.success > 0) {
-      return NextResponse.json({ 
-        success: true, 
+      try {
+        await saveNewsletterForUser(user.id, newsletter.title, curated);
+      } catch (archiveError) {
+        console.error(`[Send Now] Failed to save newsletter archive for ${user.email}:`, archiveError);
+      }
+
+      return NextResponse.json({
+        success: true,
         message: testMode ? 'Test newsletter sent successfully!' : 'Newsletter sent successfully!',
         sent: result.success,
         failed: result.failed
