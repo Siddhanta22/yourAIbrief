@@ -15,6 +15,7 @@ dist/
 # Env files
 .env
 .env.*
+!.env.example
 
 # Prisma
 prisma/dev.db
