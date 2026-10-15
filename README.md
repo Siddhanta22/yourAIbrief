@@ -85,7 +85,3 @@ Open [http://localhost:3000](http://localhost:3000) and you are in.
 ## Deploying
 
 Connect the repository to Vercel, add the same environment variables from `.env.example`, and deploy. For scheduled delivery, add `VERCEL_URL` and `CRON_SECRET` as GitHub Actions secrets so the hourly workflow can reach your app.
-
----
-
-Built by [Siddhanta Mohanty](https://github.com/Siddhanta22)
